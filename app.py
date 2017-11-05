@@ -56,7 +56,7 @@ def post_market_sell():
         if db.hexists(redisKey, 'Quantity'):
             db.hincrbyfloat(redisKey, 'Quantity', -item['Quantity'])
         else:    
-            print("What the fuck? We sold something we never had in the first place??")
+            print("We sold something we never had in the first place: Item was " + redisKey)
             
     return Response(json.dumps("OK"))
 
@@ -72,12 +72,15 @@ def post_market_buy():
         redisKey = 'ThingDef:' + item['Name']
         if db.hexists(redisKey, 'Quantity'):
             db.hincrbyfloat(redisKey, 'Quantity', item['Quantity'])
+            newItem = dict(item)
+            del newItem['Quantity']
+            del newItem['Name']
         else:
             newItem = dict(item)
             del newItem['Name']
             
             # TODO: Calculate price
-            db.hmset(redisKey, newItem)
+        db.hmset(redisKey, newItem)
             
     return Response(json.dumps("OK"))
 
