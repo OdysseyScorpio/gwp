@@ -55,7 +55,7 @@ def market_sell_items():
         
         # Add namespace to item name to form Key
         itemKey = 'ThingDef:' + item['Name']
-        
+         
         # Request Key from Redis
         itemData = db.hgetall(itemKey)
         
@@ -212,24 +212,10 @@ def thing_generate_id(thingName):
     thingID = db.incr("Things:Counter")
     
     # Add thing entry to thing map.
-    db.hset('Things:Mapping', thingName, thingID)
+    db.hset('Things:Mapping', thingID, thingName)
     
     return thingID
 
-#===============================================================================
-# @app.route('/things/debug_generate_map', methods=['GET'])
-# def things_generate_map():
-#     
-#     db = get_db()
-#     
-#     for item in db.scan_iter(match="ThingDef:*"):
-#         itemName = item.split(':')[1]
-#         if not db.hexists(item, 'Thing_ID'):
-#             thingID = thing_generate_id(itemName)
-#             db.hset(item, 'Thing_ID', thingID)
-#                 
-#     return Response("OK")
-#===============================================================================
 
 def things_update_stats(thingID, quantity, selling=False):
     
