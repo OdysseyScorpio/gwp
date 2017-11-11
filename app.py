@@ -96,6 +96,8 @@ def market_buy_items():
         # Request Key from Redis
         itemData = db.hgetall(itemKey)
         
+        pprint.pprint(itemData)
+        
         # Did we find the Key?
         if not itemData is None:
             
@@ -107,20 +109,22 @@ def market_buy_items():
             # Add thing ID if there isn't one.
             if not 'Thing_ID' in itemData:
                 newItem['Thing_ID'] = thing_generate_id(item['Name'])
-            
-            # Remove quantity from Dict so we don't overwrite it in the next step
-            del newItem['Quantity']
+           
         else:          
             newItem = dict(item)
             
             # This is a new Thing so get an ID.
             newItem['Thing_ID'] = thing_generate_id(item['Name'])
-            
-            # Remove name from Dict so it doesn't get added to Key Values
+
+                    
+        # Remove quantity from Dict so we don't overwrite it in the next step
+        if 'Quantity' in newItem:
+            del newItem['Quantity']
+        
+        # Remove name from Dict so it doesn't get added to Key Values
+        if 'Name' in newItem:
             del newItem['Name']
             
-        # TODO: Calculate price
-        
         # Set the Values of the Key
         db.hmset(itemKey, newItem)
         
