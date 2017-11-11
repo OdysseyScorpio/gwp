@@ -9,7 +9,7 @@ import datetime
 app = Flask(__name__)
 
 app.config.update(
-        DEBUG=True,
+        DEBUG=False,
         PROPAGATE_EXCEPTIONS=True
         )
 
@@ -65,6 +65,11 @@ def market_sell_items():
             # Decrement the quantity that was bought from stock
             db.hincrby(itemKey, 'Quantity', -item['Quantity'])
             
+            # Add thing ID if there isn't one.
+            if not 'Thing_ID' in itemData:
+                itemData['Thing_ID'] = thing_generate_id(item['Name'])
+                db.hset(itemKey, "Thing_ID", itemData['Thing_ID'])
+ 
             # Update ThingStats
             things_update_stats(itemData['Thing_ID'], item['Quantity'], True)
         else:
@@ -101,7 +106,7 @@ def market_buy_items():
             
             # Add thing ID if there isn't one.
             if not 'Thing_ID' in itemData:
-                newItem = thing_generate_id(item['Name'])
+                newItem['Thing_ID'] = thing_generate_id(item['Name'])
             
             # Remove quantity from Dict so we don't overwrite it in the next step
             del newItem['Quantity']
@@ -240,7 +245,7 @@ def things_update_stats(thingID, quantity, selling=False):
     current_ts = datetime.datetime.today().strftime('%Y-%m-%d')
     
     # Update the ThingStats for this Thing.
-    db.hincrby("Things:Stats:" + current_ts, thingID + mode, quantity)
+    db.hincrby("Things:Stats:" + current_ts, str(thingID) + mode, quantity)
     
     # Expire the stats one week after last write.
     db.expire("Things:Stats:" + current_ts, 604800) 
