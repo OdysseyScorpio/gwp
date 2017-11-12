@@ -121,6 +121,8 @@ def market_buy_items():
             # Add thing ID if there isn't one.
             if not 'Thing_ID' in itemData:
                 newItem['Thing_ID'] = thing_generate_id(item['Name'])
+            else:
+                newItem['Thing_ID'] = db.hget(itemKey, 'Thing_ID')
            
         else:          
             # This is a new Thing so get an ID.
