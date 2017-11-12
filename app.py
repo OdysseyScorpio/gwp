@@ -4,8 +4,6 @@ import json, redis, pprint
 import uuid
 import datetime
 
-
-
 app = Flask(__name__)
 
 app.config.update(
@@ -24,6 +22,19 @@ def get_db():
         # If not, open and connect to the database, Decode responses in UTF-8 (default)
         db = g._database = redis.Redis('127.0.0.1', '6379', decode_responses=True)
     return db
+
+def key_is_in_item(item, value):
+    
+    return (value in item)
+
+def validate_item_schema(item):
+    objectSchema = ['Name', 'BaseMarketValue', 'CurrentPrice', 'Quantity', 'StuffType', 'MinifiedContainer']
+    for schemaValue in objectSchema:
+        if not key_is_in_item(item, schemaValue):
+            print('Item {0} is broken!'.format(json.dumps(item)))
+            return False
+    
+    return True
 
 @app.route('/market/get_items', methods=['POST'])
 def market_get_items():
@@ -69,7 +80,7 @@ def market_sell_items():
             if not 'Thing_ID' in itemData:
                 itemData['Thing_ID'] = thing_generate_id(item['Name'])
                 db.hset(itemKey, "Thing_ID", itemData['Thing_ID'])
- 
+                                    
             # Update ThingStats
             things_update_stats(itemData['Thing_ID'], item['Quantity'], True)
         else:
@@ -90,32 +101,30 @@ def market_buy_items():
     # For each item sent in the JSON payload
     for item in r:
         
+        if(not validate_item_schema(item)):
+            return Response("Item schema is invalid", status=500)
+        
         # Add namespace to item name to form Key
         itemKey = 'ThingDef:' + item['Name']
         
         # Request Key from Redis
         itemData = db.hgetall(itemKey)
         
-        pprint.pprint(itemData)
+        newItem = dict(item)
         
         # Did we find the Key?
         if not itemData is None:
             
             # Increment the quantity in stock
             db.hincrby(itemKey, 'Quantity', item['Quantity'])
-            
-            newItem = dict(itemData)
-            
+                    
             # Add thing ID if there isn't one.
             if not 'Thing_ID' in itemData:
                 newItem['Thing_ID'] = thing_generate_id(item['Name'])
            
         else:          
-            newItem = dict(item)
-            
             # This is a new Thing so get an ID.
             newItem['Thing_ID'] = thing_generate_id(item['Name'])
-
                     
         # Remove quantity from Dict so we don't overwrite it in the next step
         if 'Quantity' in newItem:
@@ -220,7 +229,6 @@ def thing_generate_id(thingName):
     
     return thingID
 
-
 def things_update_stats(thingID, quantity, selling=False):
     
     db = get_db()
@@ -237,8 +245,8 @@ def things_update_stats(thingID, quantity, selling=False):
     # Update the ThingStats for this Thing.
     db.hincrby("Things:Stats:" + current_ts, str(thingID) + mode, quantity)
     
-    # Expire the stats one week after last write.
-    db.expire("Things:Stats:" + current_ts, 604800) 
+    # Expire the stats 8 days after last write.
+    db.expire("Things:Stats:" + current_ts, 691200) 
 
 if __name__ == "__main__":
-    app.run(host='0.0.0.0', port=8080, debug=True)
+    app.run(host='0.0.0.0', port=8080, debug=False)
