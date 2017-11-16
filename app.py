@@ -7,7 +7,7 @@ import datetime
 app = Flask(__name__)
 
 app.config.update(
-        DEBUG=False,
+        DEBUG=True,
         PROPAGATE_EXCEPTIONS=True
         )
 
@@ -38,19 +38,15 @@ def validate_item_schema(item):
 
 @app.route('/market/get_items', methods=['POST'])
 def market_get_items():
-    
-    db = get_db()
-    
-    r = request.json    
+        
+    requestedItems = request.json    
 
     itemsToReturn = []
 
-    for item in r:
-        marketItem = { 'Name' : item}
-        redisResult = db.hgetall('ThingDef:' + item)
+    for item in requestedItems:
+        redisResult = try_get_thing('ThingDef:' + item)
         if redisResult:
-            marketItem.update(redisResult)
-            itemsToReturn.append(marketItem)
+            itemsToReturn.append(redisResult)
             
     return Response(json.dumps(itemsToReturn), mimetype='application/json')
 
@@ -59,30 +55,45 @@ def market_sell_items():
     
     db = get_db()
     
-    r = request.json    
+    soldItems = request.json    
+
+    colonyID = get_colony_id_from_uuid(soldItems['ColonyID'])
+
+    colonyCounterKey = 'Colony:' + colonyID + ':ThingsSold' 
 
     # For each item sent in the JSON payload
-    for item in r:
-        
+    for item in soldItems['Things']:
+
         # Add namespace to item name to form Key
         itemKey = 'ThingDef:' + item['Name']
+        
+        # Add Stuff
+        if('StuffType' in item and item['StuffType'] != ''):
+            itemKey = itemKey + ":" + item['StuffType']
          
+        # Then quality
+        if('Quality' in item and item['Quality'] != ''):
+            itemKey = itemKey + ":" + item['Quality']
+            
         # Request Key from Redis
-        itemData = db.hgetall(itemKey)
+        itemData = try_get_thing(itemKey)
         
         # Did we find the Key?
         if not itemData is None:
             
+            # Add thing ID if there isn't one.
+            if not 'ThingID' in itemData:
+                itemData['ThingID'] = thing_generate_id(item['Name'])
+                db.hset(itemKey, "ThingID", itemData['ThingID'])
+                
             # Decrement the quantity that was bought from stock
             db.hincrby(itemKey, 'Quantity', -item['Quantity'])
             
-            # Add thing ID if there isn't one.
-            if not 'Thing_ID' in itemData:
-                itemData['Thing_ID'] = thing_generate_id(item['Name'])
-                db.hset(itemKey, "Thing_ID", itemData['Thing_ID'])
-                                    
+            # Update individual colony purchase stats
+            db.hincrby(colonyCounterKey, itemData['ThingID'], item['Quantity'])
+                              
             # Update ThingStats
-            things_update_stats(itemData['Thing_ID'], item['Quantity'], True)
+            things_update_stats(itemData['ThingID'], item['Quantity'], True)
         else:
             
             # Couldn't locate Key in DB, something is wrong...
@@ -98,8 +109,12 @@ def market_buy_items():
     
     r = request.json    
     
+    colonyID = get_colony_id_from_uuid(r['ColonyID'])
+
+    colonyCounterKey = 'Colony:' + colonyID + ':ThingsBought' 
+
     # For each item sent in the JSON payload
-    for item in r:
+    for item in r['Things']:
         
         if(not validate_item_schema(item)):
             return Response("Item schema is invalid", status=500)
@@ -107,40 +122,56 @@ def market_buy_items():
         # Add namespace to item name to form Key
         itemKey = 'ThingDef:' + item['Name']
         
+        # Add Stuff
+        if('StuffType' in item and item['StuffType'] != ''):
+            itemKey = itemKey + ":" + item['StuffType']
+         
+        # Then quality
+        if('Quality' in item and item['Quality'] != ''):
+            itemKey = itemKey + ":" + item['Quality']
+                
         # Request Key from Redis
-        itemData = db.hgetall(itemKey)
+        itemData = try_get_thing(itemKey)
         
         newItem = dict(item)
         
         # Did we find the Key?
-        if not itemData is None:
+        if itemData is not None:
+
+            # Add thing ID if there isn't one.
+            if not 'ThingID' in itemData:
+                newItem['ThingID'] = thing_generate_id(item['Name'])
+            else:
+                newItem['ThingID'] = db.hget(itemKey, 'ThingID')
             
             # Increment the quantity in stock
             db.hincrby(itemKey, 'Quantity', item['Quantity'])
-                    
-            # Add thing ID if there isn't one.
-            if not 'Thing_ID' in itemData:
-                newItem['Thing_ID'] = thing_generate_id(item['Name'])
-            else:
-                newItem['Thing_ID'] = db.hget(itemKey, 'Thing_ID')
+            
+            # Increment individual colony purchase stats
+            db.hincrby(colonyCounterKey, newItem['ThingID'], item['Quantity'])
+            
+            # Remove quantity from Dict so we don't overwrite it in the next step
+            if 'Quantity' in newItem:
+                del newItem['Quantity']
            
         else:          
             # This is a new Thing so get an ID.
-            newItem['Thing_ID'] = thing_generate_id(item['Name'])
-                    
-        # Remove quantity from Dict so we don't overwrite it in the next step
-        if 'Quantity' in newItem:
-            del newItem['Quantity']
-        
-        # Remove name from Dict so it doesn't get added to Key Values
-        if 'Name' in newItem:
-            del newItem['Name']
+            newItem['ThingID'] = thing_generate_id(item['Name'])
             
+            # Increment individual colony purchase stats
+            db.hincrby(colonyCounterKey, newItem['ThingID'], item['Quantity'])  
+        
+        if 'UseServerPrice' in newItem:
+            del newItem['UseServerPrice']
+        
         # Set the Values of the Key
         db.hmset(itemKey, newItem)
         
+        # Update Price History
+        things_update_price_history(newItem['ThingID'], newItem['BaseMarketValue'])
+        
         # Update ThingStats
-        things_update_stats(newItem['Thing_ID'], item['Quantity'], False)
+        things_update_stats(newItem['ThingID'], item['Quantity'], False)
 
     return Response(json.dumps("OK"))
 
@@ -160,12 +191,15 @@ def colony_generate_id():
     
         # Check to see if the Colony UUID is in use (Highly Doubtful)
         uuidExists = db.hexists('ColonyData:Mapping', colonyUUID)
+        colonyData = {"UUID": colonyUUID}
         print(uuidExists)
         if not (uuidExists):
             db.hset('ColonyData:Mapping', colonyUUID, colonyID)
             break
-      
-    return Response(json.dumps(colonyUUID), status=200)
+        
+        
+        
+    return Response(json.dumps(colonyData), status=200, mimetype='application/json')
 
 @app.route('/colonies/<string:colony_uuid>', methods=['PUT'])
 def colony_set_data(colony_uuid):
@@ -209,7 +243,18 @@ def colony_get_data(colony_uuid):
     redisKey = 'Colony:' + colonyID + ':Data'
     colony_data = db.hgetall(redisKey)
     
-    return Response(json.dumps(colony_data), status=200)
+    return Response(json.dumps(colony_data), status=200, mimetype='application/json')
+
+@app.route('/version/api', methods=['GET'])
+def api_version_get():
+    
+    db = get_db()
+    
+    version = db.get('API:Version')
+    
+    versionData = {'Version': version}
+    
+    return Response(json.dumps(versionData), status=200, mimetype='application/json')
 
 @app.route('/things', methods=['GET'])
 def things_get_count():
@@ -219,6 +264,36 @@ def things_get_count():
     
     return Response(json.dumps(thingCount))
 
+def try_get_thing(itemKey):
+    
+    db = get_db()
+    
+    # Try looking up by full name first,    
+    if(db.exists(itemKey)):
+        return db.hgetall(itemKey)
+    
+    # Try removing Normal from the key and check again.
+    if(':Normal' in itemKey):
+        itemKeyNoNormal = itemKey[:-7]
+        
+        #Now does the key exist?
+        if(db.exists(itemKeyNoNormal)):
+            itemData = db.hgetall(itemKeyNoNormal)
+            
+            # Set normal quality
+            itemData['Quality'] = 'Normal'
+            
+            # Copy to expected key.
+            db.hmset(itemKey, itemData)
+            
+            # Delete old item
+            db.delete(itemKeyNoNormal)
+            
+            return itemData
+        
+    # If we didn't find it return None.
+    return None
+            
 def thing_generate_id(thingName):
     
     db = get_db()  
@@ -232,7 +307,7 @@ def thing_generate_id(thingName):
     return thingID
 
 def things_update_stats(thingID, quantity, selling=False):
-    
+   
     db = get_db()
     
     # Did we buy or sell items?
@@ -250,5 +325,19 @@ def things_update_stats(thingID, quantity, selling=False):
     # Expire the stats 8 days after last write.
     db.expire("Things:Stats:" + current_ts, 691200) 
 
+def things_update_price_history(thingID, price):
+    
+    db = get_db()
+    
+    keyName = 'Things:PriceHistory:' + str(thingID)
+    
+    db.lpush(keyName, price)
+
+def get_colony_id_from_uuid(colonyUUID):
+    
+    db = get_db()
+    
+    return db.hget("ColonyData:Mapping", colonyUUID)
+    
 if __name__ == "__main__":
-    app.run(host='0.0.0.0', port=8080, debug=False)
+    app.run(host='0.0.0.0', port=8080, debug=True)

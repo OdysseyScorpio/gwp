@@ -24,5 +24,5 @@ if __name__ == '__main__':
             for schemaValue in objectSchema:
                 if not key_is_in_item(itemData, schemaValue):
                     print('Item {0} is broken! Removing'.format(item))
-                    #db.hdel(item)
+                    db.delete(item)
                     break
