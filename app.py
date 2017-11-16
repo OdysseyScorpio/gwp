@@ -7,7 +7,7 @@ import datetime
 app = Flask(__name__)
 
 app.config.update(
-        DEBUG=True,
+        DEBUG=False,
         PROPAGATE_EXCEPTIONS=True
         )
 
@@ -107,14 +107,14 @@ def market_buy_items():
     
     db = get_db()
     
-    r = request.json    
+    boughtItems = request.json    
     
-    colonyID = get_colony_id_from_uuid(r['ColonyID'])
+    colonyID = get_colony_id_from_uuid(boughtItems['ColonyID'])
 
     colonyCounterKey = 'Colony:' + colonyID + ':ThingsBought' 
 
     # For each item sent in the JSON payload
-    for item in r['Things']:
+    for item in boughtItems['Things']:
         
         if(not validate_item_schema(item)):
             return Response("Item schema is invalid", status=500)
@@ -340,4 +340,4 @@ def get_colony_id_from_uuid(colonyUUID):
     return db.hget("ColonyData:Mapping", colonyUUID)
     
 if __name__ == "__main__":
-    app.run(host='0.0.0.0', port=8080, debug=True)
+    app.run(host='0.0.0.0', port=8080, debug=False)
