@@ -1,6 +1,6 @@
 from flask import Flask, Response, g, request
 from flask_compress import Compress
-import json, redis, pprint
+import json, redis, pprint, gzip
 import uuid
 import datetime
 
@@ -12,7 +12,7 @@ app.config.update(
         )
 
 # Turn on HTTP Compression
-# Compress(app)
+Compress(app)
 
 # Returns a valid, connected Redis object 
 def get_db():
@@ -38,11 +38,16 @@ def validate_item_schema(item):
 
 @app.route('/market/get_items', methods=['POST'])
 def market_get_items():
+    
+    if 'things' not in request.files:
+        requestedItems = request.json    
+    else:
+        gfile = request.files['things']
+        thingFile = gzip.GzipFile(fileobj=gfile, mode='r')
+        requestedItems = json.loads(thingFile.read().decode('UTF8'))
         
-    requestedItems = request.json    
-
     itemsToReturn = []
-
+    
     for item in requestedItems:
         redisResult = try_get_thing('ThingDef:' + item)
         if redisResult:
@@ -107,7 +112,7 @@ def market_buy_items():
     
     db = get_db()
     
-    boughtItems = request.json    
+    boughtItems = request.json
     
     colonyID = get_colony_id_from_uuid(boughtItems['ColonyID'])
 
@@ -154,7 +159,7 @@ def market_buy_items():
             if 'Quantity' in newItem:
                 del newItem['Quantity']
            
-        else:          
+        else: 
             # This is a new Thing so get an ID.
             newItem['ThingID'] = thing_generate_id(item['Name'])
             
@@ -196,9 +201,7 @@ def colony_generate_id():
         if not (uuidExists):
             db.hset('ColonyData:Mapping', colonyUUID, colonyID)
             break
-        
-        
-        
+       
     return Response(json.dumps(colonyData), status=200, mimetype='application/json')
 
 @app.route('/colonies/<string:colony_uuid>', methods=['PUT'])
@@ -245,7 +248,30 @@ def colony_get_data(colony_uuid):
     
     return Response(json.dumps(colony_data), status=200, mimetype='application/json')
 
-@app.route('/version/api', methods=['GET'])
+@app.route('/server/maintenance/mode', methods=['GET'])
+def server_status():
+    
+    db = get_db()
+    
+    mode = db.get('API:Maintenance:Mode')
+    
+    # True if in Maintenance mode.
+    if(bool(int(mode))):
+        return Response(json.dumps("Gone"), status=410, mimetype='application/json')
+    else:
+        return Response(json.dumps("OK"), status=200, mimetype='application/json')  
+
+@app.route('/server/maintenance/window', methods=['GET'])
+def server_maintenance_window():
+    
+    db = get_db()
+    
+    # Returns tuple, {Start: epoch, Stop: epoch}
+    window = db.hgetall('API:Maintenance:Window')
+        
+    return Response(json.dumps(window), status=200, mimetype='application/json')
+
+@app.route('/server/version/api', methods=['GET'])
 def api_version_get():
     
     db = get_db()
