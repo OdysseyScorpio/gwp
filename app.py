@@ -88,7 +88,7 @@ def market_sell_items():
             
             # Add thing ID if there isn't one.
             if not 'ThingID' in itemData:
-                itemData['ThingID'] = thing_generate_id(item['Name'])
+                itemData['ThingID'] = thing_generate_id(itemKey)
                 db.hset(itemKey, "ThingID", itemData['ThingID'])
                 
             # Decrement the quantity that was bought from stock
@@ -145,7 +145,7 @@ def market_buy_items():
 
             # Add thing ID if there isn't one.
             if not 'ThingID' in itemData:
-                newItem['ThingID'] = thing_generate_id(item['Name'])
+                newItem['ThingID'] = thing_generate_id(itemKey)
             else:
                 newItem['ThingID'] = db.hget(itemKey, 'ThingID')
             
@@ -161,7 +161,7 @@ def market_buy_items():
            
         else: 
             # This is a new Thing so get an ID.
-            newItem['ThingID'] = thing_generate_id(item['Name'])
+            newItem['ThingID'] = thing_generate_id(itemKey)
             
             # Increment individual colony purchase stats
             db.hincrby(colonyCounterKey, newItem['ThingID'], item['Quantity'])  

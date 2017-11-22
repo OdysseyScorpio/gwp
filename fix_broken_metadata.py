@@ -1,4 +1,4 @@
-import json, redis
+import redis
 
 def get_db():
 
