@@ -221,9 +221,20 @@ def colony_set_data(colony_uuid):
     colonyID = db.hget('ColonyData:Mapping', colonySafeUUID)
     if colonyID is None:
         return Response("Colony does not exist", status=404)
-       
+    
+    # Set all the values passed in the payload to Redis. 
+    # Maybe I should change this... Seems a little dangerous.
     redisKey = 'Colony:' + colonyID + ':Data'
+    
+    colony_data['LastLogin'] = datetime.datetime.utcnow().timestamp()
+    
     db.hmset(redisKey, colony_data)
+    
+    # Build cache key string.
+    usageBitKey = "ColonyUsage:" + get_today_date_string()
+    
+    # Set the bit at the offset ColonyID to 1
+    db.setbit(usageBitKey, colonyID, 1)
     
     return Response("OK", status=200)
 
@@ -312,6 +323,9 @@ def try_get_thing(itemKey):
             # Copy to expected key.
             db.hmset(itemKey, itemData)
             
+            # Update Item Map
+            db.hset('Things:Mapping', itemData['ThingID'], itemKey)
+            
             # Delete old item
             db.delete(itemKeyNoNormal)
             
@@ -343,13 +357,17 @@ def things_update_stats(thingID, quantity, selling=False):
         mode = "_bought"
     
     # Get the current date in yyyy-mm-dd format.    
-    current_ts = datetime.datetime.today().strftime('%Y-%m-%d')
+    current_ts = get_today_date_string()
     
     # Update the ThingStats for this Thing.
     db.hincrby("Things:Stats:" + current_ts, str(thingID) + mode, quantity)
     
     # Expire the stats 8 days after last write.
     db.expire("Things:Stats:" + current_ts, 691200) 
+
+def get_today_date_string():
+        # Get the current date in yyyy-mm-dd format.    
+    return datetime.datetime.today().strftime('%Y-%m-%d')
 
 def things_update_price_history(thingID, price):
     

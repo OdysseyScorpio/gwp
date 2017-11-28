@@ -14,9 +14,10 @@ if __name__ == '__main__':
     print("Deleting ThingDef Thing IDs")
     for item in db.scan_iter(match="ThingDef:*"):
         itemName = item.split(':')[1]
-        if db.hexists(item, 'Thing_ID'):
-            print("Deleting Thing ID from {0}".format(item))
-            db.hdel(item, 'Thing_ID')
+        print("Deleting Thing ID from {0}".format(item))
+        db.hdel(item, 'Thing_ID')
+        print("Deleting ThingID from {0}".format(item))
+        db.hdel(item, 'ThingID')
         
     print("Deleting Thing Map key")
     db.delete('Things:Mapping')
