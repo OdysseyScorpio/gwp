@@ -1,6 +1,6 @@
 from flask import Flask, Response, g, request
 from flask_compress import Compress
-import json, redis, pprint, gzip
+import json, redis, gzip
 import uuid
 import datetime
 
