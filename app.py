@@ -105,6 +105,8 @@ def market_sell_items():
             print("We sold something we never had in the first place: Item was " + itemKey)
             return Response("ThingDef was not found", status=500)
     
+    set_colony_login_flag(colonyID)
+    
     return Response(json.dumps("OK"))
 
 @app.route('/market/buy_items', methods=['POST'])
@@ -177,7 +179,9 @@ def market_buy_items():
         
         # Update ThingStats
         things_update_stats(newItem['ThingID'], item['Quantity'], False)
-
+        
+    set_colony_login_flag(colonyID)
+    
     return Response(json.dumps("OK"))
 
 @app.route('/colony/generate_id', methods=['GET'])
@@ -204,6 +208,20 @@ def colony_generate_id():
        
     return Response(json.dumps(colonyData), status=200, mimetype='application/json')
 
+def set_colony_login_flag(colonyID):
+    
+    db = get_db()
+    
+    colonyKey = 'Colony:' + colonyID + ':Data'
+    
+    db.hset(colonyKey, 'LastLogin', datetime.datetime.utcnow().timestamp())
+
+    # Build cache key string.
+    usageBitKey = "ColonyUsage:" + get_today_date_string()
+
+    # Set the bit at the offset ColonyID to 1
+    db.setbit(usageBitKey, colonyID, 1)
+
 @app.route('/colonies/<string:colony_uuid>', methods=['PUT'])
 def colony_set_data(colony_uuid):
     
@@ -229,13 +247,7 @@ def colony_set_data(colony_uuid):
     colony_data['LastLogin'] = datetime.datetime.utcnow().timestamp()
     
     db.hmset(redisKey, colony_data)
-    
-    # Build cache key string.
-    usageBitKey = "ColonyUsage:" + get_today_date_string()
-    
-    # Set the bit at the offset ColonyID to 1
-    db.setbit(usageBitKey, colonyID, 1)
-    
+        
     return Response("OK", status=200)
 
 @app.route('/colonies/<string:colony_uuid>', methods=['GET'])
