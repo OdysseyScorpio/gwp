@@ -404,7 +404,7 @@ def things_update_stats(thingID, quantity, selling = False):
 
 def get_today_date_string():
         # Get the current date in yyyy-mm-dd format.
-    return datetime.datetime.today().strftime('%Y-%m-%d')
+    return datetime.datetime.utcnow().strftime('%Y-%m-%d')
 
 
 def things_update_price_history(thingID, price):
