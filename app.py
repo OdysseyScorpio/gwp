@@ -182,7 +182,7 @@ def market_buy_items():
             # Increment individual colony purchase stats
             db.hincrby(colonyCounterKey, newItem['ThingID'], item['Quantity'])
             
-            newItem['UseServerPrice'] = 0
+            newItem['UseServerPrice'] = "false"
             
         # Set the Values of the Key
         db.hmset(itemKey, newItem)
