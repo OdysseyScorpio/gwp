@@ -1,6 +1,8 @@
-from flask import Flask, Response, g, request
+from flask import Flask, Response, request
 from flask_compress import Compress
-import json, redis, gzip
+from lib import consts, db
+from modules.prime_subscription import prime_module
+import json, gzip
 import uuid
 import datetime
 
@@ -11,22 +13,12 @@ app.config.update(
         PROPAGATE_EXCEPTIONS = True
         )
 
+app.register_blueprint(prime_module)
+
 # Turn on HTTP Compression
 Compress(app)
 
-
-# Returns a valid, connected Redis object
-def get_db():
-    # Check to see if we've already opened a database
-    db = getattr(g, '_database', None)
-    if db is None:
-        # If not, open and connect to the database, Decode responses in UTF-8 (default)
-        db = g._database = redis.Redis('127.0.0.1', '6379', decode_responses = True)
-    return db
-
-
 def key_is_in_item(item, value):
-
     return (value in item)
 
 
@@ -63,7 +55,7 @@ def market_get_items():
 @app.route('/market/sell_items', methods = ['POST'])
 def market_sell_items():
 
-    db = get_db()
+    rdbi = db.get_db()
 
     soldItems = request.json
 
@@ -94,21 +86,21 @@ def market_sell_items():
             # Add thing ID if there isn't one.
             if not 'ThingID' in itemData:
                 itemData['ThingID'] = thing_generate_id(itemKey)
-                db.hset(itemKey, "ThingID", itemData['ThingID'])
+                rdbi.hset(itemKey, "ThingID", itemData['ThingID'])
 
             # Decrement the quantity that was bought from stock
-            db.hincrby(itemKey, 'Quantity', -item['Quantity'])
+            rdbi.hincrby(itemKey, 'Quantity', -item['Quantity'])
 
             # Update individual colony purchase stats
-            db.hincrby(colonyCounterKey, itemData['ThingID'], item['Quantity'])
+            rdbi.hincrby(colonyCounterKey, itemData['ThingID'], item['Quantity'])
 
             # Update ThingStats
             things_update_stats(itemData['ThingID'], item['Quantity'], True)
         else:
 
-            # Couldn't locate Key in DB, something is wrong...
+            # Couldn't locate Key in rdbi, something is wrong...
             print("We sold something we never had in the first place: Item was " + itemKey)
-            return Response("ThingDef was not found", status = 500)
+            return Response(consts.ERROR_INVALID, status = 400)
 
     set_colony_login_flag(colonyID)
 
@@ -118,7 +110,7 @@ def market_sell_items():
 @app.route('/market/buy_items', methods = ['POST'])
 def market_buy_items():
 
-    db = get_db()
+    rdbi = db.get_db()
 
     boughtItems = request.json
 
@@ -130,7 +122,7 @@ def market_buy_items():
     for item in boughtItems['Things']:
 
         if(not validate_item_schema(item)):
-            return Response("Item schema is invalid", status = 500)
+            return Response(consts.ERROR_INVALID, status = 400)
 
         # Add namespace to item name to form Key
         itemKey = 'ThingDef:' + item['Name']
@@ -157,13 +149,13 @@ def market_buy_items():
             if not 'ThingID' in itemData:
                 newItem['ThingID'] = thing_generate_id(itemKey)
             else:
-                newItem['ThingID'] = db.hget(itemKey, 'ThingID')
+                newItem['ThingID'] = rdbi.hget(itemKey, 'ThingID')
 
             # Increment the quantity in stock
-            db.hincrby(itemKey, 'Quantity', item['Quantity'])
+            rdbi.hincrby(itemKey, 'Quantity', item['Quantity'])
 
             # Increment individual colony purchase stats
-            db.hincrby(colonyCounterKey, newItem['ThingID'], item['Quantity'])
+            rdbi.hincrby(colonyCounterKey, newItem['ThingID'], item['Quantity'])
 
             # Get price item was traded at.
             # newItem['CurrentPrice'] = item['CurrentPrice']
@@ -180,12 +172,12 @@ def market_buy_items():
             newItem['ThingID'] = thing_generate_id(itemKey)
 
             # Increment individual colony purchase stats
-            db.hincrby(colonyCounterKey, newItem['ThingID'], item['Quantity'])
+            rdbi.hincrby(colonyCounterKey, newItem['ThingID'], item['Quantity'])
             
             newItem['UseServerPrice'] = "false"
             
         # Set the Values of the Key
-        db.hmset(itemKey, newItem)
+        rdbi.hmset(itemKey, newItem)
 
         # Update Price History
         things_update_price_history(newItem['ThingID'], newItem['BaseMarketValue'])
@@ -201,10 +193,10 @@ def market_buy_items():
 @app.route('/colony/generate_id', methods = ['GET'])
 def colony_generate_id():
 
-    db = get_db()
+    rdbi = db.get_db()
 
     # Increment the Colony Counter
-    colonyID = db.incr("ColonyData:Counter")
+    colonyID = rdbi.incr("ColonyData:Counter")
 
     while True:
 
@@ -213,11 +205,11 @@ def colony_generate_id():
         colonyUUID = str(newuuid)
 
         # Check to see if the Colony UUID is in use (Highly Doubtful)
-        uuidExists = db.hexists('ColonyData:Mapping', colonyUUID)
+        uuidExists = rdbi.hexists('ColonyData:Mapping', colonyUUID)
         colonyData = {"UUID": colonyUUID}
         print(uuidExists)
         if not (uuidExists):
-            db.hset('ColonyData:Mapping', colonyUUID, colonyID)
+            rdbi.hset('ColonyData:Mapping', colonyUUID, colonyID)
             break
 
     return Response(json.dumps(colonyData), status = 200, mimetype = 'application/json')
@@ -225,23 +217,23 @@ def colony_generate_id():
 
 def set_colony_login_flag(colonyID):
 
-    db = get_db()
+    rdbi = db.get_db()
 
     colonyKey = 'Colony:' + colonyID + ':Data'
 
-    db.hset(colonyKey, 'LastLogin', datetime.datetime.utcnow().timestamp())
+    rdbi.hset(colonyKey, 'LastLogin', datetime.datetime.utcnow().timestamp())
 
     # Build cache key string.
     usageBitKey = "ColonyUsage:" + get_today_date_string()
 
     # Set the bit at the offset ColonyID to 1
-    db.setbit(usageBitKey, colonyID, 1)
+    rdbi.setbit(usageBitKey, colonyID, 1)
 
 
 @app.route('/colonies/<string:colony_uuid>', methods = ['PUT'])
 def colony_set_data(colony_uuid):
 
-    db = get_db()
+    rdbi = db.get_db()
 
     colony_data = request.json
 
@@ -249,12 +241,12 @@ def colony_set_data(colony_uuid):
     try:
         colonySafeUUID = uuid.UUID(colony_uuid)
     except Exception:
-        return Response("Invalid Colony UUID", status = 404)
+        return Response(consts.ERROR_NOT_FOUND, status = 404)
 
     # Check the Colony exists
-    colonyID = db.hget('ColonyData:Mapping', colonySafeUUID)
+    colonyID = rdbi.hget('ColonyData:Mapping', colonySafeUUID)
     if colonyID is None:
-        return Response("Colony does not exist", status = 404)
+        return Response(consts.ERROR_NOT_FOUND, status = 404)
 
     # Set all the values passed in the payload to Redis.
     # Maybe I should change this... Seems a little dangerous.
@@ -262,7 +254,7 @@ def colony_set_data(colony_uuid):
 
     colony_data['LastLogin'] = datetime.datetime.utcnow().timestamp()
 
-    db.hmset(redisKey, colony_data)
+    rdbi.hmset(redisKey, colony_data)
 
     return Response("OK", status = 200)
 
@@ -270,21 +262,21 @@ def colony_set_data(colony_uuid):
 @app.route('/colonies/<string:colony_uuid>', methods = ['GET'])
 def colony_get_data(colony_uuid):
 
-    db = get_db()
+    rdbi = db.get_db()
 
     # Check the colony UUID provided is real
     try:
         colonySafeUUID = uuid.UUID(colony_uuid)
     except Exception:
-        return Response("Invalid Colony UUID", status = 404)
+        return Response(consts.ERROR_NOT_FOUND, status = 404)
 
     # Check the Colony exists
-    colonyID = db.hget('ColonyData:Mapping', colonySafeUUID)
+    colonyID = rdbi.hget('ColonyData:Mapping', colonySafeUUID)
     if colonyID is None:
-        return Response("Colony does not exist", status = 404)
+        return Response(consts.ERROR_NOT_FOUND, status = 404)
 
     redisKey = 'Colony:' + colonyID + ':Data'
-    colony_data = db.hgetall(redisKey)
+    colony_data = rdbi.hgetall(redisKey)
 
     return Response(json.dumps(colony_data), status = 200, mimetype = 'application/json')
 
@@ -292,9 +284,9 @@ def colony_get_data(colony_uuid):
 @app.route('/server/maintenance/mode', methods = ['GET'])
 def server_status():
 
-    db = get_db()
+    rdbi = db.get_db()
 
-    mode = db.get('API:Maintenance:Mode')
+    mode = rdbi.get('API:Maintenance:Mode')
 
     # True if in Maintenance mode.
     if(bool(int(mode))):
@@ -306,10 +298,10 @@ def server_status():
 @app.route('/server/maintenance/window', methods = ['GET'])
 def server_maintenance_window():
 
-    db = get_db()
+    rdbi = db.get_db()
 
     # Returns tuple, {Start: epoch, Stop: epoch}
-    window = db.hgetall('API:Maintenance:Window')
+    window = rdbi.hgetall('API:Maintenance:Window')
 
     return Response(json.dumps(window), status = 200, mimetype = 'application/json')
 
@@ -317,9 +309,9 @@ def server_maintenance_window():
 @app.route('/server/version/api', methods = ['GET'])
 def api_version_get():
 
-    db = get_db()
+    rdbi = db.get_db()
 
-    version = db.get('API:Version')
+    version = rdbi.get('API:Version')
 
     versionData = {'Version': version}
 
@@ -328,40 +320,40 @@ def api_version_get():
 
 @app.route('/things', methods = ['GET'])
 def things_get_count():
-    db = get_db()
+    rdbi = db.get_db()
 
-    thingCount = db.get("Things:Counter")
+    thingCount = rdbi.get("Things:Counter")
 
     return Response(json.dumps(thingCount))
 
 
 def try_get_thing(itemKey):
 
-    db = get_db()
+    rdbi = db.get_db()
 
     # Try looking up by full name first,
-    if(db.exists(itemKey)):
-        return db.hgetall(itemKey)
+    if(rdbi.exists(itemKey)):
+        return rdbi.hgetall(itemKey)
 
     # Try removing Normal from the key and check again.
     if(':Normal' in itemKey):
         itemKeyNoNormal = itemKey[:-7]
 
         # Now does the key exist?
-        if(db.exists(itemKeyNoNormal)):
-            itemData = db.hgetall(itemKeyNoNormal)
+        if(rdbi.exists(itemKeyNoNormal)):
+            itemData = rdbi.hgetall(itemKeyNoNormal)
 
             # Set normal quality
             itemData['Quality'] = 'Normal'
 
             # Copy to expected key.
-            db.hmset(itemKey, itemData)
+            rdbi.hmset(itemKey, itemData)
 
             # Update Item Map
-            db.hset('Things:Mapping', itemData['ThingID'], itemKey)
+            rdbi.hset('Things:Mapping', itemData['ThingID'], itemKey)
 
             # Delete old item
-            db.delete(itemKeyNoNormal)
+            rdbi.delete(itemKeyNoNormal)
 
             return itemData
 
@@ -371,20 +363,20 @@ def try_get_thing(itemKey):
 
 def thing_generate_id(thingName):
 
-    db = get_db()
+    rdbi = db.get_db()
 
     # Increment the Thing Counter
-    thingID = db.incr("Things:Counter")
+    thingID = rdbi.incr("Things:Counter")
 
     # Add thing entry to thing map.
-    db.hset('Things:Mapping', thingID, thingName)
+    rdbi.hset('Things:Mapping', thingID, thingName)
 
     return thingID
 
 
 def things_update_stats(thingID, quantity, selling = False):
 
-    db = get_db()
+    rdbi = db.get_db()
 
     # Did we buy or sell items?
     if(selling):
@@ -396,10 +388,10 @@ def things_update_stats(thingID, quantity, selling = False):
     current_ts = get_today_date_string()
 
     # Update the ThingStats for this Thing.
-    db.hincrby("Things:Stats:" + current_ts, str(thingID) + mode, quantity)
+    rdbi.hincrby("Things:Stats:" + current_ts, str(thingID) + mode, quantity)
 
     # Expire the stats 8 days after last write.
-    db.expire("Things:Stats:" + current_ts, 691200)
+    rdbi.expire("Things:Stats:" + current_ts, 691200)
 
 
 def get_today_date_string():
@@ -409,19 +401,21 @@ def get_today_date_string():
 
 def things_update_price_history(thingID, price):
 
-    db = get_db()
+    rdbi = db.get_db()
 
     keyName = 'Things:PriceHistory:' + str(thingID)
 
-    db.rpush(keyName, price)
+    rdbi.rpush(keyName, price)
 
 
 def get_colony_id_from_uuid(colonyUUID):
 
-    db = get_db()
+    rdbi = db.get_db()
 
-    return db.hget("ColonyData:Mapping", colonyUUID)
+    return rdbi.hget("ColonyData:Mapping", colonyUUID)
 
 
 if __name__ == "__main__":
+    print (app.url_map)
     app.run(host = '0.0.0.0', port = 8080, debug = False)
+    
