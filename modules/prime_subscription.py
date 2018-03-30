@@ -18,7 +18,7 @@ def subscription_check(colony_uuid):
         return Response(consts.ERROR_NOT_FOUND, status = 404)
 
     # Check the Colony exists
-    colonyID = rdbi.hget('ColonyData:Mapping', colonySafeUUID)
+    colonyID = rdbi.hget(consts.KEY_COLONY_MAP, colonySafeUUID)
     if colonyID is None:
         return Response(consts.ERROR_NOT_FOUND, status = 404)
 
@@ -50,7 +50,7 @@ def subscription_update(colony_uuid):
         return Response(consts.ERROR_NOT_FOUND, status = 404)
 
     # Check the Colony exists
-    colonyID = rdbi.hget('ColonyData:Mapping', colonySafeUUID)
+    colonyID = rdbi.hget(consts.KEY_COLONY_MAP, colonySafeUUID)
     if colonyID is None:
         return Response(consts.ERROR_NOT_FOUND, status = 404)
 
