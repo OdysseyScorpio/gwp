@@ -1,8 +1,8 @@
 from flask import Blueprint, Response, request
 from lib import consts
-from lib.things import stock, utils
 from lib import colony
-
+import lib.colony.manage as colonymanage
+import lib.things.utils as thingutils
 import json, gzip
 
 '''This module is to provide backwards compatibility with API versions < 2.1'''
@@ -23,7 +23,7 @@ def market_get_items():
     itemsToReturn = []
 
     for item in requestedItems:
-        redisResult = utils.try_get_thing('ThingDef:' + item)
+        redisResult = thingutils.try_get_thing('ThingDef:' + item)
         if redisResult:
             itemsToReturn.append(redisResult)
 
@@ -39,26 +39,12 @@ def market_sell_items():
 
     # For each item sent in the JSON payload
     for item in soldItems['Things']:
+        if(not thingutils.validate_item_schema(item)):
+            return Response(consts.ERROR_INVALID, status = 400)
 
-        # Add namespace to item name to form Key
-        itemKey = 'ThingDef:' + item['Name']
-
-        # Add Stuff
-        if('StuffType' in item and item['StuffType'] != ''):
-            itemKey = itemKey + ":" + item['StuffType']
-
-        # Then quality
-        if('Quality' in item and item['Quality'] != ''):
-            itemKey = itemKey + ":" + item['Quality']
-
-        wasOK = stock.sell_item_from_stock(itemKey, item)
+    thingutils.give_things_to_colony(colonyId, soldItems['Things'])
         
-        if(not wasOK):
-            Response(consts.ERROR_INVALID, status = 400)
-        
-        colony.manage.update_colony_sell_stats(colonyId, item['ThingID'], item['Quantity'])
-        
-    colony.manage.set_colony_login_flag(colonyId)
+    colonymanage.set_colony_login_flag(colonyId)
 
     return Response(json.dumps("OK"))
 
@@ -72,25 +58,11 @@ def market_buy_items():
 
     # For each item sent in the JSON payload
     for item in boughtItems['Things']:
-
-        if(not utils.validate_item_schema(item)):
+        if(not thingutils.validate_item_schema(item)):
             return Response(consts.ERROR_INVALID, status = 400)
 
-        # Add namespace to item name to form Key
-        itemKey = 'ThingDef:' + item['Name']
+    thingutils.sell_things_from_colony(colonyId, boughtItems['Things'])
 
-        # Add Stuff
-        if('StuffType' in item and item['StuffType'] != ''):
-            itemKey = itemKey + ":" + item['StuffType']
-
-        # Then quality
-        if('Quality' in item and item['Quality'] != ''):
-            itemKey = itemKey + ":" + item['Quality']
-
-        itemData = stock.add_item_to_stock(itemKey, item)
-
-        colony.manage.update_colony_purchase_stats(colonyId, itemData['ThingID'], itemData['Quantity'])
-
-    colony.manage.set_colony_login_flag(colonyId)
+    colonymanage.set_colony_login_flag(colonyId)
 
     return Response(json.dumps("OK"))

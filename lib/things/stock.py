@@ -16,7 +16,7 @@ def add_item_to_stock(itemKey, thingData, updateStats = True):
             newItem = dict()
 
             # Add thing ID if there isn't one.
-            if not 'ThingID' in thingData:
+            if not 'ThingID' in itemData:
                 newItem['ThingID'] = utils.thing_generate_id(itemKey)
             else:
                 newItem['ThingID'] = rdbi.hget(itemKey, 'ThingID')

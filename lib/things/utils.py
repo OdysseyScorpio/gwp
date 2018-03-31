@@ -1,5 +1,6 @@
-from lib import db, colony, things
-
+from lib import db
+import lib.things.stock as thingstock
+import lib.colony.manage as colonymanage
 import json
 
 def build_key_from_thing(thing):
@@ -90,7 +91,7 @@ def sell_things_from_colony(colonyId, listOfThings):
         # Add namespace to item name to form Key
         thingKey = build_key_from_thing(thing)
                 
-        wasOK = things.stock.add_item_to_stock(thingKey, thing) 
+        wasOK = thingstock.add_item_to_stock(thingKey, thing) 
         
         # We get the ThingID after because the Thing may not have existed until we ad
         thingID = get_thing_id_from_key(thingKey)
@@ -98,7 +99,7 @@ def sell_things_from_colony(colonyId, listOfThings):
         if not wasOK:
             return False
         
-        colony.manage.update_colony_sell_stats(colonyId, thingID, thing['Quantity'])
+        colonymanage.update_colony_sell_stats(colonyId, thingID, thing['Quantity'])
     
     return True
 
@@ -109,7 +110,7 @@ def give_things_to_colony(colonyId, listOfThings):
         
         thingKey = build_key_from_thing(thing)
 
-        wasOK = things.stock.sell_item_from_stock(thingKey, thing)
+        wasOK = thingstock.sell_item_from_stock(thingKey, thing)
 
         # We get the ThingID after because the Thing may not have existed until we ad
         thingID = get_thing_id_from_key(thingKey)
@@ -117,6 +118,6 @@ def give_things_to_colony(colonyId, listOfThings):
         if not wasOK:
             return False
         
-        colony.manage.update_colony_purchase_stats(colonyId, thingID, thing['Quantity'])
+        colonymanage.update_colony_purchase_stats(colonyId, thingID, thing['Quantity'])
 
     return True
