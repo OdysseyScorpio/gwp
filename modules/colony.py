@@ -21,7 +21,10 @@ def colony_generate_id():
         
         # Check to see if the Colony UUID is in use (Highly Doubtful)
         if not (rdbi.hexists(consts.KEY_COLONY_MAP, colonyUUID)):
+            # Add the UUID to the UUID to ID map
             rdbi.hset(consts.KEY_COLONY_MAP, colonyUUID, colonyID)
+            # Set the date the colony was first seen.
+            rdbi.hmset(consts.KEY_COLONY_DATA % colonyID, {'DateCreated' : datetime.utcnow().timestamp()})
             break
     
     colonyData = {"UUID": colonyUUID}
