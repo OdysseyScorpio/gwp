@@ -41,11 +41,9 @@ def mass_try_get_things(listOfThingDef):
     
     toReturn = []
     
-    thingDefsWithData = dict(zip(listOfThingDef, results))
-    
-    for thingDef, data in thingDefsWithData.items():
-        if(len(data) > 0):
-            toReturn.append(data)
+    for thingData in results:
+        if(len(thingData) > 0):
+            toReturn.append(thingData)
         
     return toReturn
         
