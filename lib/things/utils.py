@@ -29,6 +29,26 @@ def get_thing_id_from_key(thingKey):
         
     return thingId
 
+def mass_try_get_things(listOfThingDef):
+    
+    rdbi = db.get_db()
+    pipe = rdbi.pipeline()
+    
+    for thingDef in listOfThingDef:
+        pipe.hgetall('ThingDef:{}'.format(thingDef))
+    
+    results = pipe.execute()
+    
+    toReturn = []
+    
+    thingDefsWithData = dict(zip(listOfThingDef, results))
+    
+    for thingDef, data in thingDefsWithData.items():
+        if(len(data) > 0):
+            toReturn.append(data)
+        
+    return toReturn
+        
 def try_get_thing(itemKey):
 
     rdbi = db.get_db()
