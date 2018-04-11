@@ -20,7 +20,7 @@ def market_get_items():
         thingFile = gzip.GzipFile(fileobj = gfile, mode = 'r')
         requestedItems = json.loads(thingFile.read().decode('UTF8'))
 
-    itemsToReturn = thingutils.mass_try_get_things(requestedItems)
+    itemsToReturn = thingutils.mass_try_get_things(requestedItems)    
 
 #     for item in requestedItems:
 #         redisResult = thingutils.try_get_thing('ThingDef:' + item)

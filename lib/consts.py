@@ -29,3 +29,9 @@ ORDER_STATUS_PROCESSED = 'processed'
 ORDER_STATUS_DONE = 'done'
 ORDER_STATUS_FAIL = 'failed'
 ORDER_STATUS_REVERSE = 'reversed'
+
+# Price override keys
+
+# JSON Dict of ThingID and Sell Price
+KEY_COLONY_PRICE_PENALTIES = 'Colony:%s:PricingPenalties'
+
