@@ -1,5 +1,6 @@
 import uuid, json
 from lib import db, consts, things
+from lib.consts import KEY_ORDER_CONFIG, KEY_ORDER_TICKDELAY
 
 def create_order_key():
 
@@ -29,7 +30,7 @@ def get_ticks_needed_for_delivery():
     
     rdbi = db.get_db()
     
-    value = int(rdbi.hget('Orders:Configuration', 'TicksNeededForDelivery'))
+    value = int(rdbi.hget(KEY_ORDER_CONFIG, KEY_ORDER_TICKDELAY))
     
     return value
 

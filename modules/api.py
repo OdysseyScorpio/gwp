@@ -1,6 +1,8 @@
+import json
+import redis
 from flask import Blueprint, Response
 from lib import  db
-import json
+from lib.consts import KEY_ORDER_CONFIG, KEY_ORDER_TICKDELAY
 
 api_module = Blueprint('api_module', __name__, url_prefix='/server')
 
@@ -39,3 +41,16 @@ def api_version_get():
     versionData = {'Version': version}
 
     return Response(json.dumps(versionData), status = 200, mimetype = 'application/json')
+
+def api_check_config():
+    
+    print('Verifying/Updating configuration')
+    
+    rdbi = redis.Redis('192.168.1.1', '6379', decode_responses = True)
+
+    pipe = rdbi.pipeline()
+    
+    # Default 1 day delivery.
+    pipe.hsetnx(KEY_ORDER_CONFIG, KEY_ORDER_TICKDELAY, 60000)
+    
+    pipe.execute()

@@ -5,6 +5,7 @@ Created on 16 Jan 2018
 '''
 
 import redis
+import config
 from flask import g
 
 # Returns a valid, connected Redis object
@@ -13,5 +14,5 @@ def get_db():
     db = getattr(g, '_database', None)
     if db is None:
         # If not, open and connect to the database, Decode responses in UTF-8 (default)
-        db = g._database = redis.Redis('192.168.1.1', '6379', decode_responses = True)
+        db = g._database = redis.Redis(config.DATABASE_IP, config.DATABASE_PORT, decode_responses = True)
     return db

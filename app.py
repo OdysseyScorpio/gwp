@@ -1,11 +1,12 @@
 from flask import Flask
 from flask_compress import Compress
-
 from modules.prime_subscription import prime_module
 from modules.orders import order_module
 from modules.market import market_module
 from modules.colony import colony_module
 from modules.api import api_module
+import modules.api
+import config
 
 app = Flask(__name__)
 
@@ -26,4 +27,7 @@ Compress(app)
 
 if __name__ == "__main__":
     print (app.url_map)
-    app.run(host = '0.0.0.0', port = 8080, debug = False)
+    
+    modules.api.api_check_config()
+    
+    app.run(host = config.LISTEN_ON_IP, port = config.LISTEN_ON_PORT, debug = False)

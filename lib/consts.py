@@ -35,3 +35,5 @@ ORDER_STATUS_REVERSE = 'reversed'
 # JSON Dict of ThingID and Sell Price
 KEY_COLONY_PRICE_PENALTIES = 'Colony:%s:PricingPenalties'
 
+KEY_ORDER_CONFIG = 'Orders:Configuration'
+KEY_ORDER_TICKDELAY = 'TicksNeededForDelivery'
