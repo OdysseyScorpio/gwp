@@ -1,33 +1,36 @@
 from flask import Flask
 from flask_compress import Compress
-from modules.prime_subscription import prime_module
-from modules.orders import order_module
-from modules.market import market_module
-from modules.colony import colony_module
-from modules.api import api_module
-import modules.api
+
 import config
+from lib.api import set_database_connection, log_request_info, log_response
+from lib.modules import make_routes
 
-app = Flask(__name__)
 
-app.config.update(
-        DEBUG = False,
-        PROPAGATE_EXCEPTIONS = True
-        )
+def make_app():
+    app = Flask(__name__)
 
-app.register_blueprint(prime_module)
-app.register_blueprint(order_module)
-app.register_blueprint(market_module)
-app.register_blueprint(colony_module)
-app.register_blueprint(colony_module, url_prefix="/colonies")
-app.register_blueprint(api_module)
+    app.config.update(
+        DEBUG=config.DEBUG_MODE,
+        PROPAGATE_EXCEPTIONS=True
+    )
 
-# Turn on HTTP Compression
-Compress(app)
+    # Iterate over supported versions and generate urls for each blueprint
+    for version in config.API_DB_CONFIG:
+        make_routes.register(app, version)
+
+    # Install a hooks to setup the database connection
+    # according to the API version requested and log request/response.
+    app.before_request(set_database_connection)
+    app.before_request(log_request_info)
+    app.after_request(log_response)
+
+    # Install HTTP compression hooks
+    Compress(app)
+    print(app.url_map)
+    return app
+
 
 if __name__ == "__main__":
-    print (app.url_map)
-    
-    modules.api.api_check_config()
-    
-    app.run(host = config.LISTEN_ON_IP, port = config.LISTEN_ON_PORT, debug = False)
+    app = make_app()
+    print(app.url_map)
+    app.run(host=config.LISTEN_ON_IP, port=config.LISTEN_ON_PORT, debug=config.DEBUG_MODE, threaded=True)

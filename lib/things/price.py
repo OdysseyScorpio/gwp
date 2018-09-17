@@ -1,19 +1,15 @@
-from lib import db, consts
+# def things_update_price_history(thing_id, price):
+#     db_connection = db.get_redis_db_from_context()
+#
+#     key_name = 'Things:PriceHistory:' + str(thing_id)
+#
+#     db_connection.rpush(key_name, price)
 
-def things_update_price_history(thingID, price):
 
-    rdbi = db.get_db()
-
-    keyName = 'Things:PriceHistory:' + str(thingID)
-
-    rdbi.rpush(keyName, price)
-    
-def get_colony_price_overrides(colonyID):
-    
-    rdbi = db.get_db()
-
-    jsonData = rdbi.get(consts.KEY_COLONY_PRICE_PENALTIES % colonyID)
-    
-    if(jsonData == ''):
-        return None
-    
+# def get_colony_price_overrides(colony_id):
+#     db_connection = db.get_redis_db_from_context()
+#
+#     json_data = db_connection.get(consts.KEY_COLONY_PRICE_PENALTIES % colony_id)
+#
+#     if json_data == '':
+#         return None
