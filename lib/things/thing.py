@@ -1,3 +1,5 @@
+from collections import OrderedDict
+
 from lib import db, consts
 from lib.things.base_thing import BaseThing
 
@@ -90,7 +92,7 @@ class Thing(BaseThing):
         db_connection = db.get_redis_db_from_context()
         pipe = db_connection.pipeline()
 
-        things_to_find = {}
+        things_to_find = OrderedDict()
 
         # Iterate of the list of Thing data structures and build hash keys
         for thing_data in list_of_thing_dict:

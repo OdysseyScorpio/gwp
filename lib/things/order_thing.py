@@ -1,3 +1,7 @@
+from collections import OrderedDict
+
+from flask import current_app
+
 from lib import db, consts
 from lib.things.base_thing import BaseThing
 
@@ -36,7 +40,7 @@ class OrderThing(BaseThing):
         db_connection = db.get_redis_db_from_context()
         pipe = db_connection.pipeline()
 
-        things_to_find = {}
+        things_to_find = OrderedDict()
 
         # Iterate of the list of Thing data structures and build hash keys
         for thing_data in list_of_order_thing_dict:
@@ -49,9 +53,25 @@ class OrderThing(BaseThing):
         # Combine the list of hashes and list of results into a dictionary of Key(Hash), Value(Data)
         results = dict(zip(things_to_find.keys(), pipe.execute()))
 
-        for hash_key, exists in results.items():
-            things_to_find[hash_key].ThingExists = exists
+        # # DEBUG ONLY!
+        # pipe = db_connection.pipeline()
+        # hashes = []
+        # for thing_data in list_of_order_thing_dict:
+        #     thing_obj = cls.from_dict(thing_data)
+        #     hashes.append(thing_obj.Hash)
+        #     pipe.hgetall(consts.KEY_THING_META.format(thing_obj.Hash))
+        #
+        # pipe.execute()
+        #
+        # debug = dict(zip(hashes, pipe.execute()))
+        #
+        # for hash_key, entry in debug.values():
+        #     current_app.logger.debug('Found {}, {}'.format(hash_key, entry))
+        # # END DEBUG
 
+        for hash_key, exists in results.items():
+            current_app.logger.debug('{} exists: {}'.format(hash_key, exists))
+            things_to_find[hash_key].ThingExists = exists
             results[hash_key] = things_to_find[hash_key]
 
         return results
