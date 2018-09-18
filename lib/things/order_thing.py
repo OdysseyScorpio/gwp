@@ -41,6 +41,8 @@ class OrderThing(BaseThing):
         # Iterate of the list of Thing data structures and build hash keys
         for thing_data in list_of_order_thing_dict:
             thing_obj = cls.from_dict(thing_data)
+            if thing_obj.Hash in things_to_find:
+                continue
             things_to_find[thing_obj.Hash] = thing_obj
             pipe.exists(consts.KEY_THING_META.format(thing_obj.Hash))
 
@@ -48,8 +50,7 @@ class OrderThing(BaseThing):
         results = dict(zip(things_to_find.keys(), pipe.execute()))
 
         for hash_key, exists in results.items():
-            if exists is True:
-                things_to_find[hash_key].ThingExists = True
+            things_to_find[hash_key].ThingExists = exists
 
             results[hash_key] = things_to_find[hash_key]
 

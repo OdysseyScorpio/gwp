@@ -144,8 +144,8 @@ def update_order(colony_hash, order_hash):
         things_bought_from_gwp = [OrderThing.from_dict(saved_thing) for saved_thing in
                                   json.loads(order.ThingsBoughtFromGwp)]
 
-        stock_control.receive_things_from_colony(colony.Hash, things_sold_to_gwp)
-        stock_control.give_things_to_colony(colony.Hash, things_bought_from_gwp)
+        stock_control.receive_things_from_colony(colony.Hash, things_sold_to_gwp, pipe)
+        stock_control.give_things_to_colony(colony.Hash, things_bought_from_gwp, pipe)
 
         # Update statistics for things being sold.
         for order_thing in things_sold_to_gwp:
