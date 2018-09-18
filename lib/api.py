@@ -33,12 +33,6 @@ def log_request_info():
     current_app.logger.debug('=' * 50)
     current_app.logger.debug('Request')
     current_app.logger.debug('Headers: %s', request.headers)
-    if 'Content-Type' not in request.headers or \
-            'Content-Type' in request.headers and 'gzip' not in request.headers['Content-Type']:
-        current_app.logger.debug('Body: {}'.format(request.get_data()))
-    else:
-        current_app.logger.debug('Body: Binary Data')
-
     current_app.logger.debug('=' * 50)
 
 
@@ -46,10 +40,5 @@ def log_response(resp):
     current_app.logger.debug('-' * 50)
     current_app.logger.debug('Response')
     current_app.logger.debug('Headers: {}'.format(resp.headers))
-    if 'Content-Encoding' not in resp.headers or \
-            'Content-Encoding' in resp.headers and 'gzip' not in resp.headers['Content-Encoding']:
-        current_app.logger.debug('Body: {}'.format(resp.response))
-    else:
-        current_app.logger.debug('Body: Binary Data')
     current_app.logger.debug('-' * 50)
     return resp

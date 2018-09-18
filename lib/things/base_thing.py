@@ -5,7 +5,7 @@ from abc import ABC
 class BaseThing(ABC):
 
     def __init__(self, name: str, **kwargs):
-        if not name:
+        if name is None or name == '':
             raise ValueError('Must specify a name!')
         self._name = name
         self._quality = kwargs.get('Quality', "")
