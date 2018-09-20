@@ -2,7 +2,7 @@ from flask import Flask
 from flask_compress import Compress
 
 import config
-from lib.api import set_database_connection, log_request_info, log_response
+from lib.api import set_database_connection
 from lib.modules import make_routes
 
 
@@ -21,8 +21,8 @@ def make_app():
     # Install a hooks to setup the database connection
     # according to the API version requested and log request/response.
     app.before_request(set_database_connection)
-    app.before_request(log_request_info)
-    app.after_request(log_response)
+    # app.before_request(log_request_info)
+    # app.after_request(log_response)
 
     # Install HTTP compression hooks
     Compress(app)
