@@ -19,6 +19,6 @@ def user_generate_id():
     db_connection.hset(consts.KEY_USER_NORMAL.format(user_hash), 'DateCreated', int(datetime.utcnow().timestamp()))
 
     # Add the UUID to the UUID to ID map
-    db_connection.rpush(consts.KEY_USER_INDEX_BY_ID, user_hash)
+    db_connection.sadd(consts.KEY_USER_INDEX_BY_ID, user_hash)
 
     return Response(json.dumps({'Hash': user_hash}), status=200, mimetype='application/json')

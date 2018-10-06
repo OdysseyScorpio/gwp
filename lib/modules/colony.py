@@ -49,6 +49,16 @@ def colony_update_data(colony_hash):
         colony.FactionName = escape(incoming_data['FactionName'])
         colony.Planet = escape(incoming_data['Planet'])
 
+    pipe = db.get_redis_db_from_context().pipeline()
+
+    # Make sure add the owners to the correct sets.
+    if colony.OwnerType == 'Steam':
+        key = consts.KEY_USER_INDEX_BY_STEAM_ID
+    else:
+        key = consts.KEY_USER_INDEX_BY_ID
+
+    pipe.sadd(key, colony.OwnerID)
+
     colony.save_to_database(db.get_redis_db_from_context())
 
     colony.ping()
