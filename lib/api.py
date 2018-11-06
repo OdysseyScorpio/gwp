@@ -1,4 +1,4 @@
-from flask import request, Response, current_app
+from flask import request, Response, current_app, g
 
 from config import API_DB_CONFIG
 from lib import consts
@@ -23,6 +23,7 @@ def set_database_connection():
             db_number = API_DB_CONFIG[version]
         else:
             raise ValueError('Unknown API Version')
+        g._market = version
         get_redis_db_from_context(db_number)
 
     except Exception as e:

@@ -117,10 +117,14 @@ class BaseThing(ABC):
     def calculate_hash_from_dict(cls, dict_of_thing: dict) -> str:
         return cls.calculate_hash(dict_of_thing['Name'], dict_of_thing.get('Quality'), dict_of_thing.get('StuffType'))
 
-    def __str__(self):
+    @property
+    def FullName(self):
         full_name = self._name
         if self._quality:
             full_name += ':{}'.format(self._quality)
         if self._stuff_type:
             full_name += ':{}'.format(self._stuff_type)
-        return '{} ({})'.format(full_name, self.Hash)
+        return full_name
+
+    def __str__(self):
+        return '{} ({})'.format(self.FullName, self.Hash)

@@ -281,3 +281,15 @@ class Colony(object):
 
         # Update stats counter
         connection.set(consts.KEY_COUNTERS_HOURLY_COLONIES_ACTIVE.format(current_hour), count)
+
+    @property
+    def FullName(self):
+        full_name = self.BaseName
+        if self.FactionName:
+            full_name += ' of {}'.format(self.FactionName)
+        if self.Planet:
+            full_name += ' on {}'.format(self.Planet)
+        return full_name
+
+    def __str__(self):
+        return '{} ({})'.format(self.FullName, self.Hash)
