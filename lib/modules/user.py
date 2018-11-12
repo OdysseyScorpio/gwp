@@ -15,10 +15,9 @@ def user_generate_id():
 
     # Generate a hash for the user.
     user_hash = hashlib.sha1(str(datetime.utcnow().timestamp()).encode('UTF8')).hexdigest()
-
     db_connection.hset(consts.KEY_USER_NORMAL.format(user_hash), 'DateCreated', int(datetime.utcnow().timestamp()))
 
-    # Add the UUID to the UUID to ID map
-    db_connection.sadd(consts.KEY_USER_INDEX_BY_ID, user_hash)
+    # Add to index
+    db_connection.sadd(consts.KEY_USER_INDEX_BY_NORMAL_ID, user_hash)
 
     return Response(json.dumps({'Hash': user_hash}), status=200, mimetype='application/json')
