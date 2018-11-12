@@ -160,14 +160,20 @@ class Colony(object):
             connection = db.get_redis_db_from_context()
 
         if not self.FromDatabase:
-            # We need to add the hash to the Thing Index
+
+            # Add to main Colony list
             connection.rpush(consts.KEY_COLONY_INDEX_BY_ID, self.Hash)
 
+            # Then index for the type of user
             if self.OwnerType == 'Steam':
                 connection.rpush(
                     consts.KEY_COLONY_INDEX_BY_STEAM_ID.format(self.OwnerID),
                     self.Hash
                 )
+            if self.OwnerType == 'Normal':
+                connection.rpush(
+                    consts.KEY_USER_INDEX_BY_NORMAL_ID.format(self.OwnerID),
+                    self.Hash)
 
         connection.hmset(consts.KEY_COLONY_METADATA.format(self.Hash), self.to_dict(delta=True))
 
@@ -281,3 +287,15 @@ class Colony(object):
 
         # Update stats counter
         connection.set(consts.KEY_COUNTERS_HOURLY_COLONIES_ACTIVE.format(current_hour), count)
+
+    @property
+    def FullName(self):
+        full_name = self.BaseName
+        if self.FactionName:
+            full_name += ' of {}'.format(self.FactionName)
+        if self.Planet:
+            full_name += ' on {}'.format(self.Planet)
+        return full_name
+
+    def __str__(self):
+        return '{} ({})'.format(self.FullName, self.Hash)

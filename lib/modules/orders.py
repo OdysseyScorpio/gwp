@@ -9,6 +9,8 @@ import lib.things.stock as stock_control
 from lib import consts, db
 from lib.colonies.colony import Colony
 from lib.orders.order import Order
+from lib.qevent.event import send
+from lib.qevent.messages.order import OrderMessage
 from lib.things.order_thing import OrderThing
 from lib.things.thing import Thing
 
@@ -97,12 +99,18 @@ def place_order(colony_hash):
         DeliveryTick=int(int(request_data['CurrentGameTick']) + order_utils.get_ticks_needed_for_delivery())
     )
 
+    # Update database
     order.save_to_database(db_connection)
-
     order_stats.increment_order_counter()
     order_stats.update_orders_placed_by_hour()
-
     colony.ping()
+
+    # Try to send message to queue.
+    try:
+        message = OrderMessage.prepare(db.get_market_name(), things_bought_from_gwp, things_sold_to_gwp, colony)
+        send(message)
+    except Exception:
+        pass  # IDGAF
 
     return Response(json.dumps("OK"), status=consts.HTTP_OK, mimetype=consts.MIME_JSON)
 
@@ -146,6 +154,9 @@ def update_order(colony_hash, order_hash):
 
         stock_control.receive_things_from_colony(colony.Hash, things_sold_to_gwp, pipe)
         stock_control.give_things_to_colony(colony.Hash, things_bought_from_gwp, pipe)
+
+        # Update bucket timestamp and clear if needed.
+        thing_stats.reset_thing_traded_stats_bucket()
 
         # Update statistics for things being sold.
         for order_thing in things_sold_to_gwp:
