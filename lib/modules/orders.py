@@ -185,8 +185,8 @@ def get_order(colony_hash, order_hash):
         return Response(consts.ERROR_NOT_FOUND, status=consts.HTTP_NOT_FOUND)
 
     # Deserialize the Things Sold/Bought so they can be correctly re-serialized as dicts not JSON strings.
-    order.ThingsSoldToGwp = json.loads(order.ThingsSoldToGwp)
-    order.ThingsBoughtFromGwp = json.loads(order.ThingsBoughtFromGwp)
+    order.ThingsSoldToGwp = json.loads(order.ThingsSoldToGwp if len(order.ThingsSoldToGwp) > 0 else '[]')
+    order.ThingsBoughtFromGwp = json.loads(order.ThingsBoughtFromGwp if len(order.ThingsBoughtFromGwp) > 0 else '[]')
 
     colony.ping()
 
