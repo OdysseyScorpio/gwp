@@ -16,7 +16,7 @@ def get_ticks_needed_for_delivery():
     return value
 
 
-def  anti_time_warp_check(colony, current_game_tick):
+def anti_time_warp_check(colony, current_game_tick):
 
     # Test to see if the current tick is EARLIER than the last time we received a game tick.
     # This usually means they warped back in time due to an earlier game save.  

@@ -48,7 +48,7 @@ class OrderMessage(BaseMessage):
             string += ' just bought '
             items = []
             for name, qty in self.order['buy']:
-                items.push('{0} of {1} '.format(qty, name))
+                items.append('{0} of {1} '.format(qty, name))
             string += ', '.join(items)
             did_buy = True
 
@@ -58,7 +58,7 @@ class OrderMessage(BaseMessage):
             string += ' just sold '
             items = []
             for name, qty in self.order['sell']:
-                items.push('{0} of {1} '.format(qty, name))
+                items.append('{0} of {1} '.format(qty, name))
                 did_sell = True
             string += ', '.join(items)
         return string

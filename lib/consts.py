@@ -18,16 +18,24 @@ KEY_THING_META = 'Things:Metadata:{}'
 KEY_THING_LOCALE = 'Things:Locale:{}:{}'
 KEY_THING_INDEX = 'Things:Index'
 KEY_THING_BASE_MARKET_VALUE_DATA = 'Things:BaseMarketValueData:{}'
+KEY_THING_LOCALE_FULL_TEXT_INDEX = 'Things:Locale:FTI:{}'
+KEY_THING_LOCALE_THING_NAME = 'Things:Locale:Name:{}:{}'
+KEY_THING_LOCALE_THING_NAMES = 'Things:Locale:Names:{}:{}'
+KEY_THING_LOCALE_KNOWN_LANGUAGES = 'Things:Locale:Known'
+
 
 # User keys
 KEY_USER_INDEX_BY_ID = 'Users:Indices:ByID'
 KEY_USER_INDEX_BY_STEAM_ID = 'Users:Indices:BySteamID'
+KEY_USER_INDEX_BY_NORMAL_ID = 'Users:Indices:ByNormalID'
 KEY_USER_STEAM = 'Users:Steam:{}'
 KEY_USER_NORMAL = 'Users:Normal:{}'
 
 # Colony keys
 KEY_COLONY_INDEX_BY_ID = 'Colonies:Indices:ByColonyID'
 KEY_COLONY_INDEX_BY_STEAM_ID = 'Colonies:Indices:BySteamID:{}'
+KEY_COLONY_INDEX_BY_NORMAL_ID = 'Colonies:Indices:ByNormalID:{}'
+
 KEY_COLONY_METADATA = 'Colonies:Metadata:{}'
 
 # API Status Keys
@@ -64,13 +72,15 @@ KEY_COUNTERS_HOURLY_THINGS = 'Statistics:Counters:Hourly:Things:{}:{}'
 
 # Historical Counters
 KEY_COUNTERS_HISTORICAL_VOLUME_TRADED = 'Statistics:Counters:Historical:VolumeTraded:{}'
+KEY_COUNTERS_HISTORICAL_THING_VOLUME_TRADED_BY_DATE_AND_ACTION = \
+    'Statistics:Counters:Historical:Things:VolumeTradedByDateAndAction:{}:{}'
 KEY_COUNTERS_HISTORICAL_ORDERS = 'Statistics:Counters:Historical:Orders:{}'
 
 # This key is updated by GlitterBot during maintenance.
 # If you really need to know the count do SCARD with KEY_TRENDS_HISTORICAL_COLONIES_ACTIVE_BY_DATE
 KEY_COUNTERS_HISTORICAL_COLONIES_ACTIVE = 'Statistics:Counters:Historical:ColoniesActive:{}'
 
-KEY_COUNTERS_HISTORICAL_THINGS = 'Statistics:Counters:Historical:Things:VolumeTradedByDate:{}:{}'
+KEY_COUNTERS_HISTORICAL_THINGS_TRADED_BY_DATE = 'Statistics:Counters:Historical:Things:VolumeTradedByDate:{}:{}'
 
 # Trend historical hashes/sets
 KEY_TRENDS_HISTORICAL_THING_PRICE_BY_DAY = 'Statistics:Trends:Historical:Things:PriceByDate:{}:{}'
@@ -97,6 +107,13 @@ KEY_TOTAL_SOLD = 'Statistics:Totals:Sold'
 # Bucket Keys
 KEY_BUCKET_COLONIES_ACTIVE = 'Statistics:Bucket:ColoniesActive'
 
+# Cache keys
+
+# ZSET of Hash: Qty
+KEY_BUCKET_MOST_TRADED_CURRENT_HOUR = 'Statistics:Bucket:VolumeTradedThisHourByAction:{}'
+KEY_BUCKET_MOST_TRADED_CURRENT_LAST_UPDATED = 'Statistics:Bucket:VolumeTradedThisHourByAction:{}:LastUpdated'
+
+
 # Prime configuration data
 KEY_CONFIGURATION_PRIME_COST = 'Configuration:Prime:CostPerInterval'
 KEY_CONFIGURATION_PRIME_INTERVAL = 'Configuration:Prime:Interval'
@@ -104,3 +121,20 @@ KEY_PRIME_SUBSCRIPTION_DATA = 'Prime:Subscribed:{}'
 KEY_CONFIGURATION_ORDERS = 'Configuration:Orders'
 HASH_KEY_ORDER_TICK_DELAY = 'TicksNeededForDelivery'
 
+# Glitterbot Specific
+KEY_GLITTERBOT_DATA = "Configuration:GlitterBot"
+KEY_GLITTERBOT_PRICEBREAKS = "PriceBreaks"
+KEY_GLITTERBOT_MTIME_START = "Maintenance_Window_Start_Hour"
+KEY_GLITTERBOT_MTIME_LENGTH = "Maintenance_Window_Length"
+KEY_GLITTERBOT_MTIME_NEXT = "Maintenance_Next_Run"
+KEY_GLITTERBOT_MTIME_PREABMLE = "Maintenance_Window_Preamble"
+KEY_GLITTERBOT_MTIME_SET = "Maintenance_Window_Set"
+KEY_GLITTERBOT_HAS_RUN = "Maintenance_Has_Run"
+KEY_GLITTERBOT_BUY_PRICE_MULTIPLIER = "BuyPriceMultiplier"
+KEY_GLITTERBOT_SELL_PRICE_MULTIPLIER = 'SellPriceReductionMultiplier'
+KEY_GLITTERBOT_MIN_SELL_PRICE_MULTIPLIER = 'MinPriceReductionMultiplier'
+KEY_GLITTERBOT_SALE_DATA = 'Configuration:GlitterBot:Sales:{}'
+KEY_GLITTERBOT_IGNORE_THINGS = 'IgnoredThingIDs'
+
+# Handy shortcuts
+WELLKNOWN_THINGS_SILVER = '8697f432058b914ba2b20c5bd6f0678548126e21'

@@ -54,10 +54,13 @@ def colony_update_data(colony_hash):
     # Make sure add the owners to the correct sets.
     if colony.OwnerType == 'Steam':
         key = consts.KEY_USER_INDEX_BY_STEAM_ID
+    elif colony.OwnerType == 'Normal':
+        key = consts.KEY_USER_INDEX_BY_NORMAL_ID
     else:
-        key = consts.KEY_USER_INDEX_BY_ID
+        return Response(consts.ERROR_INVALID, status=consts.HTTP_INVALID)
 
     pipe.sadd(key, colony.OwnerID)
+    pipe.sadd(consts.KEY_USER_INDEX_BY_ID, colony.OwnerID)
 
     colony.save_to_database(db.get_redis_db_from_context())
 
@@ -71,6 +74,6 @@ def colony_get_data(colony_hash):
     colony = Colony.get_from_database_by_hash(colony_hash)
 
     if not colony:
-        return Response(consts.ERROR_NOT_FOUND, status=consts.ERROR_NOT_FOUND)
+        return Response(consts.ERROR_NOT_FOUND, status=consts.HTTP_NOT_FOUND)
 
     return Response(json.dumps(colony.to_dict()), status=200, mimetype='application/json')

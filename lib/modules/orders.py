@@ -155,6 +155,9 @@ def update_order(colony_hash, order_hash):
         stock_control.receive_things_from_colony(colony.Hash, things_sold_to_gwp, pipe)
         stock_control.give_things_to_colony(colony.Hash, things_bought_from_gwp, pipe)
 
+        # Update bucket timestamp and clear if needed.
+        thing_stats.reset_thing_traded_stats_bucket()
+
         # Update statistics for things being sold.
         for order_thing in things_sold_to_gwp:
             thing_stats.update_stats_for_sold_thing(order_thing, order_thing.Quantity, pipe)
