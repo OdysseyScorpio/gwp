@@ -60,7 +60,6 @@ def colony_update_data(colony_hash):
         return Response(consts.ERROR_INVALID, status=consts.HTTP_INVALID)
 
     pipe.sadd(key, colony.OwnerID)
-    pipe.sadd(consts.KEY_USER_INDEX_BY_ID, colony.OwnerID)
 
     colony.save_to_database(db.get_redis_db_from_context())
 
