@@ -8,10 +8,12 @@ Created on 16 Jan 2018
 ERROR_NOT_FOUND = 'Not Found'
 ERROR_INTERNAL = 'Internal Server Error'
 ERROR_INVALID = 'Invalid Request'
+ERROR_BANNED = 'Forbidden'
 MIME_JSON = 'application/json'
 HTTP_OK = 200
 HTTP_NOT_FOUND = 404
 HTTP_INVALID = 400
+HTTP_FORBIDDEN = 403
 
 # Thing keys
 KEY_THING_META = 'Things:Metadata:{}'
@@ -30,6 +32,8 @@ KEY_USER_INDEX_BY_STEAM_ID = 'Users:Indices:BySteamID'
 KEY_USER_INDEX_BY_NORMAL_ID = 'Users:Indices:ByNormalID'
 KEY_USER_STEAM = 'Users:Steam:{}'
 KEY_USER_NORMAL = 'Users:Normal:{}'
+KEY_USER_STEAM_ID_BANNED_SET = 'Users:Indices:Banned:SteamID'
+KEY_USER_NORMAL_ID_BANNED_SET = 'Users:Indices:Banned:NormalID'
 
 # Colony keys
 KEY_COLONY_INDEX_BY_ID = 'Colonies:Indices:ByColonyID'

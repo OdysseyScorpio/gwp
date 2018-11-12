@@ -53,11 +53,18 @@ def colony_update_data(colony_hash):
 
     # Make sure add the owners to the correct sets.
     if colony.OwnerType == 'Steam':
+        ban_key = consts.KEY_USER_STEAM_ID_BANNED_SET
         key = consts.KEY_USER_INDEX_BY_STEAM_ID
     elif colony.OwnerType == 'Normal':
         key = consts.KEY_USER_INDEX_BY_NORMAL_ID
+        ban_key = consts.KEY_USER_NORMAL_ID_BANNED_SET
     else:
         return Response(consts.ERROR_INVALID, status=consts.HTTP_INVALID)
+
+    conn = db.get_redis_db_from_context()
+    banned = conn.sismember(ban_key, colony.OwnerID)
+    if banned:
+        return Response(consts.ERROR_BANNED, status=consts.HTTP_FORBIDDEN)
 
     pipe.sadd(key, colony.OwnerID)
 

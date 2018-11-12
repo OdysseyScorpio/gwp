@@ -172,7 +172,7 @@ class Colony(object):
                 )
             if self.OwnerType == 'Normal':
                 connection.rpush(
-                    consts.KEY_USER_INDEX_BY_NORMAL_ID.format(self.OwnerID),
+                    consts.KEY_COLONY_INDEX_BY_NORMAL_ID.format(self.OwnerID),
                     self.Hash)
 
         connection.hmset(consts.KEY_COLONY_METADATA.format(self.Hash), self.to_dict(delta=True))
@@ -296,6 +296,19 @@ class Colony(object):
         if self.Planet:
             full_name += ' on {}'.format(self.Planet)
         return full_name
+
+    def IsBanned(self):
+        conn = db.get_redis_db_from_context()
+        # Make sure add the owners to the correct sets.
+        if self.OwnerType == 'Steam':
+            ban_key = consts.KEY_USER_STEAM_ID_BANNED_SET
+        elif self.OwnerType == 'Normal':
+            ban_key = consts.KEY_USER_NORMAL_ID_BANNED_SET
+        else:
+            banned = False
+        banned = conn.sismember(ban_key, self.OwnerID)
+
+        return banned
 
     def __str__(self):
         return '{} ({})'.format(self.FullName, self.Hash)
