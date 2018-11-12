@@ -172,7 +172,7 @@ class Colony(object):
                 )
             if self.OwnerType == 'Normal':
                 connection.rpush(
-                    consts.KEY_USER_INDEX_BY_NORMAL_ID.format(self.OwnerID),
+                    consts.KEY_COLONY_INDEX_BY_NORMAL_ID.format(self.OwnerID),
                     self.Hash)
 
         connection.hmset(consts.KEY_COLONY_METADATA.format(self.Hash), self.to_dict(delta=True))
