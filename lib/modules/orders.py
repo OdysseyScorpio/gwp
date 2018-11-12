@@ -27,6 +27,9 @@ def get_orders(colony_hash):
     if colony is None:
         return Response(consts.ERROR_NOT_FOUND, status=consts.ERROR_NOT_FOUND)
 
+    if colony.IsBanned():
+        return Response(consts.ERROR_BANNED, status=consts.HTTP_FORBIDDEN)
+
     current_tick = request.args.get('tick')
 
     if current_tick is None:
@@ -63,6 +66,9 @@ def place_order(colony_hash):
 
     if colony is None:
         return Response(consts.ERROR_NOT_FOUND, status=consts.ERROR_NOT_FOUND)
+
+    if colony.IsBanned():
+        return Response(consts.ERROR_BANNED, status=consts.HTTP_FORBIDDEN)
 
     request_data = request.json
 
@@ -125,6 +131,9 @@ def update_order(colony_hash, order_hash):
 
     if not colony:
         return Response(consts.ERROR_NOT_FOUND, status=consts.ERROR_NOT_FOUND)
+
+    if colony.IsBanned():
+        return Response(consts.ERROR_BANNED, status=consts.HTTP_FORBIDDEN)
 
     order = Order.get_from_database_by_hash(order_hash)
 

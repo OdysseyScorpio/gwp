@@ -297,5 +297,18 @@ class Colony(object):
             full_name += ' on {}'.format(self.Planet)
         return full_name
 
+    def IsBanned(self):
+        conn = db.get_redis_db_from_context()
+        # Make sure add the owners to the correct sets.
+        if self.OwnerType == 'Steam':
+            ban_key = consts.KEY_USER_STEAM_ID_BANNED_SET
+        elif self.OwnerType == 'Normal':
+            ban_key = consts.KEY_USER_NORMAL_ID_BANNED_SET
+        else:
+            banned = False
+        banned = conn.sismember(ban_key, self.OwnerID)
+
+        return banned
+
     def __str__(self):
         return '{} ({})'.format(self.FullName, self.Hash)
