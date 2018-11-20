@@ -106,12 +106,7 @@ class BaseThing(ABC):
             quality = ''
         if not stuff_type:
             stuff_type = ''
-        return hashlib.sha1(
-            (name +
-             stuff_type +
-             quality
-             ).encode('UTF8')
-        ).hexdigest()
+        return hashlib.sha1('{}{}{}'.format(name, stuff_type, quality).encode('UTF8')).hexdigest()
 
     @classmethod
     def calculate_hash_from_dict(cls, dict_of_thing: dict) -> str:

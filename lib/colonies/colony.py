@@ -184,12 +184,7 @@ class Colony(object):
     @staticmethod
     def generate_hash(base_name, faction_name, planet, date_created):
         return hashlib.sha1(
-            (
-                    base_name +
-                    faction_name +
-                    planet +
-                    str(date_created)
-            ).encode('UTF8')
+            ("{}{}{}{}".format(base_name, faction_name, planet, date_created)).encode('UTF8')
         ).hexdigest()
 
     @classmethod
