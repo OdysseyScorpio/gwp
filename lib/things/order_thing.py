@@ -47,8 +47,13 @@ class OrderThing(BaseThing):
             thing_obj = cls.from_dict(thing_data)
             if thing_obj.Hash in things_to_find:
                 continue
-            things_to_find[thing_obj.Hash] = thing_obj
-            pipe.exists(consts.KEY_THING_META.format(thing_obj.Hash))
+
+            # Do we already have this item? If so compress the stacks into a single line.
+            if thing_obj.Hash in things_to_find:
+                things_to_find[thing_obj.Hash].Quantity += thing_obj.Quantity
+            else:
+                things_to_find[thing_obj.Hash] = thing_obj
+                pipe.exists(consts.KEY_THING_META.format(thing_obj.Hash))
 
         # Combine the list of hashes and list of results into a dictionary of Key(Hash), Value(Data)
         results = dict(zip(things_to_find.keys(), pipe.execute()))
