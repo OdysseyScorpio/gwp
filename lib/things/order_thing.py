@@ -45,8 +45,6 @@ class OrderThing(BaseThing):
         # Iterate of the list of Thing data structures and build hash keys
         for thing_data in list_of_order_thing_dict:
             thing_obj = cls.from_dict(thing_data)
-            if thing_obj.Hash in things_to_find:
-                continue
 
             # Do we already have this item? If so compress the stacks into a single line.
             if thing_obj.Hash in things_to_find:
