@@ -22,7 +22,7 @@ db = get_redis_database_connection(config.API_DB_CONFIG[version])
 
 pipe = db.pipeline()
 
-with open('{}_base_game_data_{}.json'.format(version, language), 'r', encoding='utf-8') as json_file:
+with open('{}_thing_data_{}.json'.format(version, language), 'r', encoding='utf-8') as json_file:
     json_data = json.load(json_file)
 
     for thing_data in json_data:

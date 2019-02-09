@@ -300,7 +300,8 @@ class Colony(object):
         elif self.OwnerType == 'Normal':
             ban_key = consts.KEY_USER_NORMAL_ID_BANNED_SET
         else:
-            banned = False
+            return True
+
         banned = conn.sismember(ban_key, self.OwnerID)
 
         return banned
