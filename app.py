@@ -4,6 +4,7 @@ from flask_compress import Compress
 import config
 from lib.api import set_database_connection
 from lib.modules import make_routes
+from lib.modules.v4 import make_routes as make_routes_v4
 
 
 def make_app():
@@ -15,8 +16,11 @@ def make_app():
     )
 
     # Iterate over supported versions and generate urls for each blueprint
-    for version in config.API_DB_CONFIG:
+    for version in config.OLD_API_DB_CONFIG:
         make_routes.register(app, version)
+
+    for version in config.API_DB_CONFIG:
+        make_routes_v4.register(app, 'v4/{}'.format(version))
 
     # Install a hooks to setup the database connection
     # according to the API version requested and log request/response.
@@ -32,5 +36,4 @@ def make_app():
 
 if __name__ == "__main__":
     app = make_app()
-    print(app.url_map)
     app.run(host=config.LISTEN_ON_IP, port=config.LISTEN_ON_PORT, debug=config.DEBUG_MODE, threaded=True)

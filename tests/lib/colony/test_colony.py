@@ -1,23 +1,12 @@
 import redis
-from flask import g
 from pytest import fixture
 
-import app
 from lib import date_utils, consts
 from lib.colonies.colony import Colony
-from lib.db import get_redis_db_from_context, get_redis_database_connection
+from lib.db import get_redis_db_from_context
 
 
 class TestColonyClass:
-
-    @staticmethod
-    @fixture()
-    def test_app_context():
-        a = app.make_app()
-        a.config['TESTING'] = True
-        with a.app_context():
-            g._database = get_redis_database_connection(db_number=15)
-            yield a
 
     @staticmethod
     @fixture()
@@ -210,7 +199,7 @@ class TestColonyClass:
         for a, b in s:
             assert not b.FromDatabase
 
-    def test_class_init_from_dict_to_dict(self, fixture_colony_a):
+    def test_class_init_from_dict_to_dict(self, test_app_context, fixture_colony_a):
 
         a_dict = fixture_colony_a.to_dict()
         b = Colony.from_dict(a_dict).to_dict()
@@ -218,7 +207,7 @@ class TestColonyClass:
         for k, v in b.items():
             assert a_dict[k] == v
 
-    def test_class_init_from_dict_hash(self, fixture_colony_a):
+    def test_class_init_from_dict_hash(self, test_app_context, fixture_colony_a):
 
         o = Colony.from_dict(fixture_colony_a.to_dict())
 

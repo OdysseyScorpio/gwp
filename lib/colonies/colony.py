@@ -1,5 +1,6 @@
 import hashlib
 from collections import OrderedDict
+from typing import List, Dict
 
 from lib import db, consts, date_utils
 
@@ -32,6 +33,8 @@ class Colony(object):
         self._from_database = bool(kwargs.get('FromDatabase', False))
 
         self.__changes = {}
+        self.__supported_things = []
+        self.__mod_list = []
 
     @property
     def DateCreated(self):
@@ -308,3 +311,59 @@ class Colony(object):
 
     def __str__(self):
         return '{} ({})'.format(self.FullName, self.Hash)
+
+    @property
+    def SupportedThings(self):
+        """
+        Get the list of supported things.
+        This field is lazily initialised on first request.
+        :return:
+        """
+        if not self.__supported_things:
+            conn = db.get_redis_db_from_context()
+
+            result = conn.get(consts.KEY_COLONY_SUPPORTED_THINGS.format(self.Hash))
+
+            if result:
+                self.__supported_things = result
+
+        return self.__supported_things
+
+    @SupportedThings.setter
+    def SupportedThings(self, supported_things: List[Dict[str, str]]):
+        """
+        Set the Colony's list of supported things immediately
+        :param supported_things: JSON encoded list of dict<str, str>
+        :return:
+        """
+        self.__supported_things = supported_things
+        conn = db.get_redis_db_from_context()
+        conn.set(consts.KEY_COLONY_SUPPORTED_THINGS.format(self.Hash), supported_things)
+
+    @property
+    def ModList(self):
+        """
+        Get the list of supported mods.
+        This field is lazily initialised on first request.
+        :return:
+        """
+        if not self.__mod_list:
+            conn = db.get_redis_db_from_context()
+
+            result = conn.get(consts.KEY_COLONY_MODS.format(self.Hash))
+
+            if result:
+                self.__mod_list = result
+
+        return self.__mod_list
+
+    @ModList.setter
+    def ModList(self, mod_list: List[str]):
+        """
+        Set the Colony's list of supported mods immediately
+        :param mod_list: JSON encoded list of str
+        :return:
+        """
+        self.__mod_list = mod_list
+        conn = db.get_redis_db_from_context()
+        conn.set(consts.KEY_COLONY_MODS.format(self.Hash), mod_list)

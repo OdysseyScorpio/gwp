@@ -1,6 +1,6 @@
 from flask import request, Response, current_app, g
 
-from config import API_DB_CONFIG
+from config import API_DB_CONFIG, OLD_API_DB_CONFIG
 from lib import consts
 from lib.db import get_redis_db_from_context
 
@@ -19,10 +19,27 @@ def set_database_connection():
 
         version = groups[1]
 
-        if version in API_DB_CONFIG:
-            db_number = API_DB_CONFIG[version]
+        # Check if it's a new style URL
+        if version.startswith('v'):
+            if len(groups) > 2:
+                version = groups[2]
+
+                # New versions: m1, m2, m3 etc.
+                if version in API_DB_CONFIG:
+                    db_number = API_DB_CONFIG[version]
+                else:
+                    return Response('Unknown API Version', status=consts.HTTP_NOT_FOUND)
+
+            else:
+                return Response('Unknown API Version', status=consts.HTTP_NOT_FOUND)
+
         else:
-            raise ValueError('Unknown API Version')
+            # Old version strings: b18, b19, u1, test
+            if version in OLD_API_DB_CONFIG:
+                db_number = OLD_API_DB_CONFIG[version]
+            else:
+                return Response('Unknown API Version', status=consts.HTTP_NOT_FOUND)
+
         g._market = version
         get_redis_db_from_context(db_number)
 

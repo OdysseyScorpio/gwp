@@ -1,25 +1,14 @@
 import json
 
 import redis
-from flask import g
 from pytest import fixture
 
-import app
 from lib import consts
 from lib.colonies.colony import Colony
-from lib.db import get_redis_database_connection, get_redis_db_from_context
+from lib.db import get_redis_db_from_context
 from lib.orders.order import Order
 from lib.things.order_thing import OrderThing
 from lib.things.thing import Thing
-
-
-@fixture()
-def test_app_context():
-    a = app.make_app()
-    a.config['TESTING'] = True
-    with a.app_context():
-        g._database = get_redis_database_connection(db_number=15)
-        yield a
 
 
 class TestOrderClass:

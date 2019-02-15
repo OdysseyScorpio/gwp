@@ -41,6 +41,8 @@ KEY_COLONY_INDEX_BY_STEAM_ID = 'Colonies:Indices:BySteamID:{}'
 KEY_COLONY_INDEX_BY_NORMAL_ID = 'Colonies:Indices:ByNormalID:{}'
 
 KEY_COLONY_METADATA = 'Colonies:Metadata:{}'
+KEY_COLONY_SUPPORTED_THINGS = 'Colonies:SupportedThings:{}'
+KEY_COLONY_MODS = 'Colonies:ModList:{}'
 
 # API Status Keys
 KEY_API_VERSION = 'Configuration:API:Version'
