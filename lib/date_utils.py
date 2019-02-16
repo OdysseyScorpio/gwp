@@ -28,7 +28,7 @@ def get_unix_time_range_for_hour():
 
 
 def get_current_unix_time():
-    return int(datetime.now(timezone.utc).timestamp())
+    return int(datetime.utcnow().timestamp())
 
 
 def add_days_to_current_time(days_to_add: int):

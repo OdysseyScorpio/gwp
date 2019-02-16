@@ -35,6 +35,8 @@ KEY_USER_NORMAL = 'Users:Normal:{}'
 KEY_USER_STEAM_ID_BANNED_SET = 'Users:Indices:Banned:SteamID'
 KEY_USER_NORMAL_ID_BANNED_SET = 'Users:Indices:Banned:NormalID'
 
+USER_TYPES = ['Normal', 'Steam']
+
 # Colony keys
 KEY_COLONY_INDEX_BY_ID = 'Colonies:Indices:ByColonyID'
 KEY_COLONY_INDEX_BY_STEAM_ID = 'Colonies:Indices:BySteamID:{}'
@@ -123,7 +125,10 @@ KEY_BUCKET_MOST_TRADED_CURRENT_LAST_UPDATED = 'Statistics:Bucket:VolumeTradedThi
 # Prime configuration data
 KEY_CONFIGURATION_PRIME_COST = 'Configuration:Prime:CostPerInterval'
 KEY_CONFIGURATION_PRIME_INTERVAL = 'Configuration:Prime:Interval'
+
 KEY_PRIME_SUBSCRIPTION_DATA = 'Prime:Subscribed:{}'
+KEY_PRIME_TOKEN_DATA = 'Prime:Tokens:{}'
+
 KEY_CONFIGURATION_ORDERS = 'Configuration:Orders'
 HASH_KEY_ORDER_TICK_DELAY = 'TicksNeededForDelivery'
 

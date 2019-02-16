@@ -1,3 +1,4 @@
+import gzip
 import json
 
 from flask import Blueprint, Response, request, current_app
@@ -65,16 +66,25 @@ def place_order(colony_hash):
     colony = Colony.get_from_database_by_hash(colony_hash)
 
     if colony is None:
-        return Response(consts.ERROR_NOT_FOUND, status=consts.ERROR_NOT_FOUND)
+        return Response(consts.ERROR_NOT_FOUND, status=consts.HTTP_NOT_FOUND)
 
     if colony.IsBanned():
         return Response(consts.ERROR_BANNED, status=consts.HTTP_FORBIDDEN)
 
-    request_data = request.json
+    if not colony.HasActiveSubscription():
+        return Response(consts.ERROR_NOT_FOUND, status=consts.HTTP_NOT_FOUND)
+
+    gz_post_data = request.files['order']
+
+    # Decompress payload
+    compressed_order = gzip.GzipFile(fileobj=gz_post_data, mode='r')
+
+    # Deserialize JSON
+    payload = json.loads(compressed_order.read().decode('UTF8'))
 
     # Check if these OrderThings exist in database.
-    things_sold_to_gwp = OrderThing.many_from_dict_and_check_exists(request_data['ThingsSoldToGwp'])
-    things_bought_from_gwp = OrderThing.many_from_dict_and_check_exists(request_data['ThingsBoughtFromGwp'])
+    things_sold_to_gwp = OrderThing.many_from_dict_and_check_exists(payload['ThingsSoldToGwp'])
+    things_bought_from_gwp = OrderThing.many_from_dict_and_check_exists(payload['ThingsBoughtFromGwp'])
 
     # We need to create any Things that don't exist so they can be updated later.
     # Things are created with zero quantity and will be updated when the order is done.
@@ -97,12 +107,12 @@ def place_order(colony_hash):
 
     order = Order(
         colony.Hash,
-        OrderedTick=int(request_data['CurrentGameTick']),
+        OrderedTick=int(payload['CurrentGameTick']),
         ThingsBoughtFromGwp=json.dumps(
             [order_thing.to_dict(keep_quantity=True) for order_thing in things_bought_from_gwp.values()]),
         ThingsSoldToGwp=json.dumps(
             [order_thing.to_dict(keep_quantity=True) for order_thing in things_sold_to_gwp.values()]),
-        DeliveryTick=int(int(request_data['CurrentGameTick']) + order_utils.get_ticks_needed_for_delivery())
+        DeliveryTick=int(int(payload['CurrentGameTick']) + order_utils.get_ticks_needed_for_delivery())
     )
 
     # Update database
@@ -130,7 +140,7 @@ def update_order(colony_hash, order_hash):
     colony = Colony.get_from_database_by_hash(colony_hash)
 
     if not colony:
-        return Response(consts.ERROR_NOT_FOUND, status=consts.ERROR_NOT_FOUND)
+        return Response(consts.ERROR_NOT_FOUND, status=consts.HTTP_NOT_FOUND)
 
     if colony.IsBanned():
         return Response(consts.ERROR_BANNED, status=consts.HTTP_FORBIDDEN)
@@ -140,18 +150,22 @@ def update_order(colony_hash, order_hash):
     if not order:
         return Response(consts.ERROR_NOT_FOUND, status=consts.HTTP_NOT_FOUND)
 
-    status = request.json['Status']
+    new_status = request.json['Status']
 
-    if status in consts.ORDER_VALID_STATES:
-        order.Status = status
+    # Check that the state is not going backwards or is invalid.
+    if new_status in consts.ORDER_VALID_STATES:
+        if check_order_state_is_valid(order, new_status):
+            order.Status = new_status
+        else:
+            return Response(consts.ERROR_INVALID, status=consts.HTTP_INVALID)
     else:
         return Response(consts.ERROR_INVALID, status=consts.HTTP_INVALID)
 
-    if status == consts.ORDER_STATUS_FAIL:
+    if order.Status == consts.ORDER_STATUS_FAIL:
         # Remove order from list of new orders.
         pipe.lrem(consts.KEY_COLONY_NEW_ORDERS.format(colony.Hash), order.Hash, 0)
 
-    elif status == consts.ORDER_STATUS_DONE:
+    elif order.Status == consts.ORDER_STATUS_DONE:
         # Remove order from list of new orders.
         pipe.lrem(consts.KEY_COLONY_NEW_ORDERS.format(colony.Hash), order.Hash, 0)
 
@@ -201,3 +215,17 @@ def get_order(colony_hash, order_hash):
     colony.ping()
 
     return Response(json.dumps(order.to_dict()), status=consts.HTTP_OK, mimetype=consts.MIME_JSON)
+
+
+def check_order_state_is_valid(order, new_status):
+    if order.Status == 'new':
+        allowed_statuses = ['processed', 'failed']
+    elif order.Status == 'processed':
+        allowed_statuses = ['done', 'failed']
+    else:
+        return False
+
+    if new_status in allowed_statuses:
+        return True
+    else:
+        return False

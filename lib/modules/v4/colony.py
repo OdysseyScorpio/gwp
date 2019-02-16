@@ -5,7 +5,7 @@ from flask import Blueprint, Response, request, escape
 
 from lib import consts, db
 from lib.colonies.colony import Colony
-from lib.consts import KEY_THING_LOCALE_THING_NAMES
+from lib.consts import KEY_THING_LOCALE_THING_NAMES, USER_TYPES
 from lib.things.thing import Thing
 
 colony_module = Blueprint('v4_colony_module', __name__, url_prefix='/v4/colonies')
@@ -16,6 +16,9 @@ def colony_create():
     incoming_data = request.json
 
     colony = new_colony_from_request(incoming_data)
+
+    if not any(allowed_type == colony.OwnerType for allowed_type in USER_TYPES):
+        return Response(consts.ERROR_INVALID, status=consts.HTTP_INVALID)
 
     colony.save_to_database(db.get_redis_db_from_context())
 
@@ -29,7 +32,8 @@ def new_colony_from_request(incoming_data):
                   'FactionName': escape(incoming_data['FactionName']),
                   'Planet': escape(incoming_data['Planet']),
                   'OwnerType': escape(incoming_data['OwnerType']),
-                  'OwnerID': escape(incoming_data['OwnerID'])}
+                  'OwnerID': escape(incoming_data['OwnerID']),
+                  'LastGameTick': escape(incoming_data['LastGameTick'])}
 
     return Colony.from_dict(new_colony)
 
@@ -51,6 +55,9 @@ def colony_update_data(colony_hash):
         colony.BaseName = escape(incoming_data['BaseName'])
         colony.FactionName = escape(incoming_data['FactionName'])
         colony.Planet = escape(incoming_data['Planet'])
+        colony.LastGameTick = escape(incoming_data['LastGameTick'])
+        if incoming_data['HasSpawned']:
+            colony.Ban()
 
     pipe = db.get_redis_db_from_context().pipeline()
 

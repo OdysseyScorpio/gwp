@@ -3,7 +3,6 @@ from flask_compress import Compress
 
 import config
 from lib.api import set_database_connection
-from lib.modules import make_routes
 from lib.modules.v4 import make_routes as make_routes_v4
 
 
@@ -14,10 +13,6 @@ def make_app():
         DEBUG=config.DEBUG_MODE,
         PROPAGATE_EXCEPTIONS=True
     )
-
-    # Iterate over supported versions and generate urls for each blueprint
-    for version in config.OLD_API_DB_CONFIG:
-        make_routes.register(app, version)
 
     for version in config.API_DB_CONFIG:
         make_routes_v4.register(app, 'v4/{}'.format(version))

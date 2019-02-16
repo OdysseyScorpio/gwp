@@ -211,7 +211,7 @@ class TestColonyClass:
 
         o = Colony.from_dict(fixture_colony_a.to_dict())
 
-        assert "8c48d58071aa3521160798c54f787d4a5298318d" == o.Hash
+        assert "6088d480fb5c7a539d83be169d708c457a9a077f" == o.Hash
 
     def test_save_and_load(self, test_app_context, fixture_colony_a):
 
