@@ -20,6 +20,8 @@ def try_auto_parse(val):
             return False
         elif val == "True":
             return True
+        elif val == "None":
+            return None
         else:
             val = decoder.decode(val)
     except Exception:

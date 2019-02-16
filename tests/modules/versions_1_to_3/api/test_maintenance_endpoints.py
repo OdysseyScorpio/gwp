@@ -6,7 +6,7 @@ from config import OLD_API_DB_CONFIG
 versions = OLD_API_DB_CONFIG
 
 
-class TestMode:
+class TestAPI:
 
     @pytest.mark.parametrize("version", versions)
     def test_get_mode(self, version, test_app_context: Flask):

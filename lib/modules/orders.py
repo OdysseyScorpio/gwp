@@ -157,10 +157,10 @@ def update_order(colony_hash, order_hash):
 
         # Deserialize JSON back into OrderThings
         things_sold_to_gwp = [OrderThing.from_dict(saved_thing) for saved_thing in
-                              json.loads(order.ThingsSoldToGwp if len(order.ThingsSoldToGwp) > 0 else '[]')]
+                              (order.ThingsSoldToGwp if type(order.ThingsSoldToGwp) == list else '[]')]
 
         things_bought_from_gwp = [OrderThing.from_dict(saved_thing) for saved_thing in
-                                  json.loads(order.ThingsBoughtFromGwp if len(order.ThingsBoughtFromGwp) > 0 else '[]')]
+                                  (order.ThingsBoughtFromGwp if type(order.ThingsBoughtFromGwp) == list else '[]')]
 
         stock_control.receive_things_from_colony(colony.Hash, things_sold_to_gwp, pipe)
         stock_control.give_things_to_colony(colony.Hash, things_bought_from_gwp, pipe)
@@ -195,8 +195,8 @@ def get_order(colony_hash, order_hash):
         return Response(consts.ERROR_NOT_FOUND, status=consts.HTTP_NOT_FOUND)
 
     # Deserialize the Things Sold/Bought so they can be correctly re-serialized as dicts not JSON strings.
-    order.ThingsSoldToGwp = json.loads(order.ThingsSoldToGwp if len(order.ThingsSoldToGwp) > 0 else '[]')
-    order.ThingsBoughtFromGwp = json.loads(order.ThingsBoughtFromGwp if len(order.ThingsBoughtFromGwp) > 0 else '[]')
+    order.ThingsSoldToGwp = order.ThingsSoldToGwp if type(order.ThingsSoldToGwp) == list else '[]'
+    order.ThingsBoughtFromGwp = order.ThingsBoughtFromGwp if type(order.ThingsBoughtFromGwp) == list else '[]'
 
     colony.ping()
 

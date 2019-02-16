@@ -164,7 +164,7 @@ class TestOrderClass:
 
         order_a = Order.get_from_database_by_hash(order_a.Hash)
 
-        things_bought_from_gwp = OrderThing.many_from_dict_and_check_exists(json.loads(order_a.ThingsBoughtFromGwp))
+        things_bought_from_gwp = OrderThing.many_from_dict_and_check_exists(order_a.ThingsBoughtFromGwp)
 
         first_item = list(things_bought_from_gwp.values())[0].to_dict(keep_quantity=True)
 
@@ -179,7 +179,7 @@ class TestOrderClass:
 
         order_a = Order.get_from_database_by_hash(order_a.Hash)
 
-        things_bought_from_gwp = Thing.get_many_from_database(json.loads(order_a.ThingsBoughtFromGwp))
+        things_bought_from_gwp = Thing.get_many_from_database(order_a.ThingsBoughtFromGwp)
 
         first_item = list(things_bought_from_gwp.values())[0].to_dict()
 
