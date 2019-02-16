@@ -14,8 +14,9 @@ def user_generate_id():
     db_connection = db.get_redis_db_from_context()
 
     # Generate a hash for the user.
-    user_hash = hashlib.sha1(str(datetime.utcnow().timestamp()).encode('UTF8')).hexdigest()
-    db_connection.hset(consts.KEY_USER_NORMAL.format(user_hash), 'DateCreated', int(datetime.utcnow().timestamp()))
+    ts = datetime.utcnow().timestamp()
+    user_hash = hashlib.sha1(str(ts).encode('UTF8')).hexdigest()
+    db_connection.hset(consts.KEY_USER_NORMAL.format(user_hash), 'DateCreated', ts)
 
     # Add to index
     db_connection.sadd(consts.KEY_USER_INDEX_BY_NORMAL_ID, user_hash)
