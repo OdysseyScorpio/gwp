@@ -117,6 +117,9 @@ def colony_set_supported_things(colony_hash: str):
 
     # Need to construct things then add Localized name to index
     pipe = db.get_redis_db_from_context().pipeline()
+
+    pipe.sadd(consts.KEY_THING_LOCALE_KNOWN_LANGUAGES, locale)
+
     for thing_json in supported_things_json:
         thing = Thing.from_dict(thing_json)
         pipe.zincrby(KEY_THING_LOCALE_THING_NAMES.format(locale, thing.Hash), thing.LocalizedName, 1)
