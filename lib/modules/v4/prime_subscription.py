@@ -67,7 +67,7 @@ def subscription_update(colony_hash):
         return Response(consts.ERROR_INVALID, status=consts.HTTP_INVALID)
 
     # Fetch our token from DB
-    token_in_db = db_connection.get(consts.KEY_PRIME_TOKEN_DATA.format(colony_hash))
+    token_in_db = db_connection.get(consts.KEY_PRIME_TOKEN_DATA.format(colony.Hash))
 
     # Has it expired or ever existed?
     if token_in_db is None:
