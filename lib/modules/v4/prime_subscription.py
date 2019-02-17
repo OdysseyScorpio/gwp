@@ -32,7 +32,7 @@ def subscription_check(colony_hash):
 
     ticks_remaining = db_connection.get(consts.KEY_PRIME_SUBSCRIPTION_DATA.format(colony.Hash))
 
-    if ticks_remaining is not None:
+    if ticks_remaining is not None and ticks_remaining > 100:
         response['TickSubscriptionExpires'] = int(ticks_remaining)
     else:
         current_app.logger.debug('{} is generating a subscription token.'.format(colony.Hash))
