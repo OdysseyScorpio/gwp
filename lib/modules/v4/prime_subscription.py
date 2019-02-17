@@ -1,7 +1,7 @@
 import hashlib
 import json
 
-from flask import Blueprint, Response, request
+from flask import Blueprint, Response, request, current_app
 
 from lib import consts, db
 from lib import date_utils
@@ -22,6 +22,7 @@ def subscription_check(colony_hash):
     colony = Colony.get_from_database_by_hash(colony_hash)
 
     if not colony:
+        current_app.logger.error('{} colony not found in database'.format(colony.Hash))
         return Response(consts.ERROR_NOT_FOUND, status=consts.HTTP_NOT_FOUND)
 
     response['SubscriptionCost'] = int(db_connection.get(consts.KEY_CONFIGURATION_PRIME_COST))
@@ -34,6 +35,7 @@ def subscription_check(colony_hash):
     if ticks_remaining is not None:
         response['TickSubscriptionExpires'] = int(ticks_remaining)
     else:
+        current_app.logger.debug('{} is generating a subscription token.'.format(colony.Hash))
         # Generate a random token only valid for 30 seconds.
         token = make_token(colony.Hash)
         pipe = db_connection.pipeline()
@@ -41,6 +43,7 @@ def subscription_check(colony_hash):
         pipe.expire(consts.KEY_PRIME_TOKEN_DATA.format(colony.Hash), 30)
         pipe.execute()
         response['Token'] = token
+        current_app.logger.debug('{} new token is .'.format(colony.Hash, token))
 
     return Response(json.dumps(response), status=200, mimetype='application/json')
 
@@ -58,12 +61,14 @@ def subscription_update(colony_hash):
     colony = Colony.get_from_database_by_hash(colony_hash)
 
     if not colony:
-        return Response(consts.ERROR_NOT_FOUND, status=consts.HTTP_INVALID)
+        current_app.logger.error('{} colony not found in database'.format(colony.Hash))
+        return Response(consts.ERROR_NOT_FOUND, status=consts.HTTP_NOT_FOUND)
 
     sub_data = request.json
 
     # Validate token
     if 'Token' not in sub_data:
+        current_app.logger.error('{} Subscription token was not in payload.'.format(colony.Hash))
         return Response(consts.ERROR_INVALID, status=consts.HTTP_INVALID)
 
     # Fetch our token from DB
@@ -71,10 +76,13 @@ def subscription_update(colony_hash):
 
     # Has it expired or ever existed?
     if token_in_db is None:
+        current_app.logger.error('{} Subscription token was not in database or has expired.'.format(colony.Hash))
         return Response(consts.ERROR_INVALID, status=consts.HTTP_INVALID)
 
     # They should match
     if token_in_db != sub_data['Token']:
+        current_app.logger.error(
+            '{} Subscription tokens did not match {} != {}.'.format(colony.Hash, sub_data['Token'], token_in_db))
         return Response(consts.ERROR_INVALID, status=consts.HTTP_INVALID)
 
     expiryTick = DaysPerQuadrum * TicksPerDay + colony.LastGameTick
@@ -95,4 +103,5 @@ def subscription_update(colony_hash):
     subscriptionCost = int(db_connection.get(consts.KEY_CONFIGURATION_PRIME_COST))
     pipe.hincrby(consts.KEY_THING_META.format(thing.Hash), 'Quantity', subscriptionCost)
     pipe.execute()
+    current_app.logger.debug('{} Subscription successful.'.format(colony.Hash))
     return Response("OK", status=consts.HTTP_OK)
