@@ -32,18 +32,20 @@ def subscription_check(colony_hash):
 
     ticks_remaining = db_connection.get(consts.KEY_PRIME_SUBSCRIPTION_DATA.format(colony.Hash))
 
-    if ticks_remaining is not None and ticks_remaining > 100:
+    if ticks_remaining is not None:
         response['TickSubscriptionExpires'] = int(ticks_remaining)
     else:
-        current_app.logger.debug('{} is generating a subscription token.'.format(colony.Hash))
-        # Generate a random token only valid for 30 seconds.
-        token = make_token(colony.Hash)
-        pipe = db_connection.pipeline()
-        pipe.set(consts.KEY_PRIME_TOKEN_DATA.format(colony.Hash), token)
-        pipe.expire(consts.KEY_PRIME_TOKEN_DATA.format(colony.Hash), 30)
-        pipe.execute()
-        response['Token'] = token
-        current_app.logger.debug('{} new token is .'.format(colony.Hash, token))
+        response['TickSubscriptionExpires'] = 0
+
+    current_app.logger.debug('{} is generating a subscription token.'.format(colony.Hash))
+    # Generate a random token only valid for 30 seconds.
+    token = make_token(colony.Hash)
+    pipe = db_connection.pipeline()
+    pipe.set(consts.KEY_PRIME_TOKEN_DATA.format(colony.Hash), token)
+    pipe.expire(consts.KEY_PRIME_TOKEN_DATA.format(colony.Hash), 30)
+    pipe.execute()
+    response['Token'] = token
+    current_app.logger.debug('{} new token is .'.format(colony.Hash, token))
 
     return Response(json.dumps(response), status=200, mimetype='application/json')
 

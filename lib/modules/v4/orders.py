@@ -25,6 +25,10 @@ def get_orders(colony_hash):
 
     colony = Colony.get_from_database_by_hash(colony_hash)
 
+    ####
+    # WE DON'T NEED A SUBSCRIPTION TO GET THE ORDER LIST
+    ####
+
     if colony is None:
         return Response(consts.ERROR_NOT_FOUND, status=consts.ERROR_NOT_FOUND)
 
@@ -70,6 +74,10 @@ def place_order(colony_hash):
 
     if colony.IsBanned():
         return Response(consts.ERROR_BANNED, status=consts.HTTP_FORBIDDEN)
+
+    ####
+    # WE MUST HAVE A SUBSCRIPTION TO PLACE AN ORDER
+    ####
 
     if not colony.HasActiveSubscription():
         return Response(consts.ERROR_NOT_FOUND, status=consts.HTTP_NOT_FOUND)
@@ -134,6 +142,10 @@ def place_order(colony_hash):
 @order_module.route('/<string:colony_hash>/<string:order_hash>', methods=['POST'])
 def update_order(colony_hash, order_hash):
     db_connection = db.get_redis_db_from_context()
+
+    ####
+    # WE DON'T NEED A SUBSCRIPTION TO UPDATE THE ORDER STATUS
+    ####
 
     pipe = db_connection.pipeline()
 
@@ -201,6 +213,11 @@ def update_order(colony_hash, order_hash):
 @order_module.route('/<string:colony_hash>/<string:order_hash>', methods=['GET'])
 def get_order(colony_hash, order_hash):
     colony = Colony.get_from_database_by_hash(colony_hash)
+
+    ####
+    # WE DON'T NEED A SUBSCRIPTION TO GET THE ORDER STATUS
+    ####
+
     if not colony:
         return Response(consts.ERROR_NOT_FOUND, status=consts.HTTP_INVALID)
 
