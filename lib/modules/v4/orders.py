@@ -113,15 +113,21 @@ def place_order(colony_hash):
 
     create_missing_things.execute()
 
+    ThingsBoughtFromGwp = [order_thing.to_dict(keep_quantity=True) for order_thing in things_bought_from_gwp.values()]
+    ThingsSoldToGwp = [order_thing.to_dict(keep_quantity=True) for order_thing in things_sold_to_gwp.values()]
+
     order = Order(
         colony.Hash,
         OrderedTick=int(payload['CurrentGameTick']),
-        ThingsBoughtFromGwp=json.dumps(
-            [order_thing.to_dict(keep_quantity=True) for order_thing in things_bought_from_gwp.values()]),
-        ThingsSoldToGwp=json.dumps(
-            [order_thing.to_dict(keep_quantity=True) for order_thing in things_sold_to_gwp.values()]),
+        ThingsBoughtFromGwp=json.dumps(ThingsBoughtFromGwp),
+        ThingsSoldToGwp=json.dumps(ThingsSoldToGwp),
         DeliveryTick=int(int(payload['CurrentGameTick']) + order_utils.get_ticks_needed_for_delivery())
     )
+
+    pipe = db_connection.pipeline()
+    stock_control.give_things_to_colony(colony.Hash, ThingsBoughtFromGwp, pipe)
+    stock_control.receive_things_from_colony(colony.Hash, ThingsSoldToGwp, pipe)
+    pipe.execute()
 
     # Update database
     order.save_to_database(db_connection)
@@ -187,9 +193,6 @@ def update_order(colony_hash, order_hash):
 
         things_bought_from_gwp = [OrderThing.from_dict(saved_thing) for saved_thing in
                                   (order.ThingsBoughtFromGwp if type(order.ThingsBoughtFromGwp) == list else '[]')]
-
-        stock_control.receive_things_from_colony(colony.Hash, things_sold_to_gwp, pipe)
-        stock_control.give_things_to_colony(colony.Hash, things_bought_from_gwp, pipe)
 
         # Update bucket timestamp and clear if needed.
         thing_stats.reset_thing_traded_stats_bucket()
