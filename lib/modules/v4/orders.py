@@ -113,20 +113,19 @@ def place_order(colony_hash):
 
     create_missing_things.execute()
 
-    ThingsBoughtFromGwp = [order_thing.to_dict(keep_quantity=True) for order_thing in things_bought_from_gwp.values()]
-    ThingsSoldToGwp = [order_thing.to_dict(keep_quantity=True) for order_thing in things_sold_to_gwp.values()]
-
     order = Order(
         colony.Hash,
         OrderedTick=int(payload['CurrentGameTick']),
-        ThingsBoughtFromGwp=json.dumps(ThingsBoughtFromGwp),
-        ThingsSoldToGwp=json.dumps(ThingsSoldToGwp),
+        ThingsBoughtFromGwp=json.dumps([order_thing.to_dict(keep_quantity=True) for order_thing in
+                                        things_bought_from_gwp.values()]),
+        ThingsSoldToGwp=json.dumps(
+            [order_thing.to_dict(keep_quantity=True) for order_thing in things_sold_to_gwp.values()]),
         DeliveryTick=int(int(payload['CurrentGameTick']) + order_utils.get_ticks_needed_for_delivery())
     )
 
     pipe = db_connection.pipeline()
-    stock_control.give_things_to_colony(colony.Hash, ThingsBoughtFromGwp, pipe)
-    stock_control.receive_things_from_colony(colony.Hash, ThingsSoldToGwp, pipe)
+    stock_control.give_things_to_colony(colony.Hash, things_bought_from_gwp.values(), pipe)
+    stock_control.receive_things_from_colony(colony.Hash, things_sold_to_gwp.values(), pipe)
     pipe.execute()
 
     # Update database
