@@ -25,7 +25,6 @@ KEY_THING_LOCALE_THING_NAME = 'Things:Locale:Name:{}:{}'
 KEY_THING_LOCALE_THING_NAMES = 'Things:Locale:Names:{}:{}'
 KEY_THING_LOCALE_KNOWN_LANGUAGES = 'Things:Locale:Known'
 
-
 # User keys
 KEY_USER_INDEX_BY_ID = 'Users:Indices:ByID'
 KEY_USER_INDEX_BY_STEAM_ID = 'Users:Indices:BySteamID'
@@ -34,6 +33,7 @@ KEY_USER_STEAM = 'Users:Steam:{}'
 KEY_USER_NORMAL = 'Users:Normal:{}'
 KEY_USER_STEAM_ID_BANNED_SET = 'Users:Indices:Banned:SteamID'
 KEY_USER_NORMAL_ID_BANNED_SET = 'Users:Indices:Banned:NormalID'
+KEY_USER_ACTIVATION_REQUEST_TOKEN = 'Users:Reactivation:{}'
 
 USER_TYPES = ['Normal', 'Steam']
 
@@ -41,8 +41,9 @@ USER_TYPES = ['Normal', 'Steam']
 KEY_COLONY_INDEX_BY_ID = 'Colonies:Indices:ByColonyID'
 KEY_COLONY_INDEX_BY_STEAM_ID = 'Colonies:Indices:BySteamID:{}'
 KEY_COLONY_INDEX_BY_NORMAL_ID = 'Colonies:Indices:ByNormalID:{}'
-
 KEY_COLONY_METADATA = 'Colonies:Metadata:{}'
+KEY_COLONY_FTMP_INDEX = 'Colonies:Indices:TMP:{}'
+KEY_COLONY_FULL_TEXT_INDEX = 'Colonies:Indices:FTI:{}'
 KEY_COLONY_SUPPORTED_THINGS = 'Colonies:SupportedThings:{}'
 KEY_COLONY_MODS = 'Colonies:ModList:{}'
 
@@ -120,7 +121,6 @@ KEY_BUCKET_COLONIES_ACTIVE = 'Statistics:Bucket:ColoniesActive'
 # ZSET of Hash: Qty
 KEY_BUCKET_MOST_TRADED_CURRENT_HOUR = 'Statistics:Bucket:VolumeTradedThisHourByAction:{}'
 KEY_BUCKET_MOST_TRADED_CURRENT_LAST_UPDATED = 'Statistics:Bucket:VolumeTradedThisHourByAction:{}:LastUpdated'
-
 
 # Prime configuration data
 KEY_CONFIGURATION_PRIME_COST = 'Configuration:Prime:CostPerInterval'

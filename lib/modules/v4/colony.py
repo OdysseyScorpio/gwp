@@ -74,7 +74,9 @@ def colony_update_data(colony_hash):
 
     pipe.sadd(key, colony.OwnerID)
 
-    colony.save_to_database()
+    colony.save_to_database(pipe)
+
+    pipe.execute()
 
     colony.ping()
 
