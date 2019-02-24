@@ -124,7 +124,7 @@ def colony_set_supported_things(colony_hash: str):
 
     for thing_json in supported_things_json:
         thing = Thing.from_dict(thing_json)
-        pipe.zincrby(KEY_THING_LOCALE_THING_NAMES.format(locale, thing.Hash), thing.LocalizedName, 1)
+        pipe.zincrby(KEY_THING_LOCALE_THING_NAMES.format(locale, thing.Hash), 1, thing.LocalizedName)
     pipe.execute()
 
     # This is immediately saved.

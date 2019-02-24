@@ -38,14 +38,14 @@ def __update_stats_for_thing(buy, thing, quantity, connection):
         do_exec = True
 
     # Update Base Market Value
-    connection.zincrby(consts.KEY_THING_BASE_MARKET_VALUE_DATA.format(thing.Hash), thing.BaseMarketValue, 1)
+    connection.zincrby(consts.KEY_THING_BASE_MARKET_VALUE_DATA.format(thing.Hash), 1, thing.BaseMarketValue)
 
     # Hourly over time e.g. best hours to buy/sell trend
     connection.hincrby(consts.KEY_COUNTERS_HOURLY_VOLUME_TRADED.format(current_hour), action, quantity)
     connection.hincrby(consts.KEY_COUNTERS_HOURLY_THINGS.format(thing.Hash, current_hour), action, quantity)
 
     # Hourly, as in this has been traded in this hour or not.
-    connection.zincrby(consts.KEY_BUCKET_MOST_TRADED_CURRENT_HOUR.format(action), thing.Hash, quantity)
+    connection.zincrby(consts.KEY_BUCKET_MOST_TRADED_CURRENT_HOUR.format(action), quantity, thing.Hash)
 
     # Daily
     connection.hincrby(consts.KEY_COUNTERS_HISTORICAL_VOLUME_TRADED.format(current_day), action, quantity)
@@ -53,7 +53,7 @@ def __update_stats_for_thing(buy, thing, quantity, connection):
     # Per day by action by hash
     connection.zincrby(
         consts.KEY_COUNTERS_HISTORICAL_THING_VOLUME_TRADED_BY_DATE_AND_ACTION.format(current_day, action),
-        thing.Hash, quantity)
+        quantity, thing.Hash)
 
     # Per hash by day by action
     connection.hincrby(consts.KEY_COUNTERS_HISTORICAL_THINGS_TRADED_BY_DATE.format(thing.Hash, current_day), action,
