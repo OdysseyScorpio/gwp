@@ -52,7 +52,7 @@ with open('{}_thing_data_{}.json'.format(version, language), 'r', encoding='utf-
 
         # Set full name for Thing, Ours is the version of truth, give it a high score.
         pipe.zadd(lib.consts.KEY_THING_LOCALE_THING_NAMES.format(thing_data['LanguageCode'], thing.Hash),
-                  thing_data['LocalizedName'], 1000)
+                  {thing_data['LocalizedName']: 1000})
 
 count = len(pipe.execute())
 print('Wrote {} items'.format(count))
