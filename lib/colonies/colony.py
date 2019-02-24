@@ -271,7 +271,7 @@ class Colony(object):
             pipe.zremrangebyscore(consts.KEY_BUCKET_COLONIES_ACTIVE, '-inf', '(' + str(epoch_start))
 
         # Add this colony to the set or update the score if it's already in it.
-        pipe.zadd(consts.KEY_BUCKET_COLONIES_ACTIVE, self.Hash, current_epoch)
+        pipe.zadd(consts.KEY_BUCKET_COLONIES_ACTIVE, {self.Hash: current_epoch})
 
         # Add this colony to set for current day if it's not already in it.
         pipe.sadd(consts.KEY_TRENDS_HISTORICAL_COLONIES_ACTIVE_BY_DATE.format(current_date), self.Hash)
