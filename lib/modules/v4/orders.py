@@ -1,3 +1,4 @@
+import gzip
 import json
 
 from flask import Blueprint, Response, request, current_app
@@ -14,7 +15,7 @@ from lib.qevent.messages.order import OrderMessage
 from lib.things.order_thing import OrderThing
 from lib.things.thing import Thing
 
-order_module = Blueprint('v3_prime_orders', __name__, url_prefix='/v3/orders')
+order_module = Blueprint('v4_prime_orders', __name__, url_prefix='/v4/orders')
 
 
 @order_module.route('/<string:colony_hash>', methods=['GET'])
@@ -23,6 +24,10 @@ def get_orders(colony_hash):
     response = dict()
 
     colony = Colony.get_from_database_by_hash(colony_hash)
+
+    ####
+    # WE DON'T NEED A SUBSCRIPTION TO GET THE ORDER LIST
+    ####
 
     if colony is None:
         return Response(consts.ERROR_NOT_FOUND, status=consts.ERROR_NOT_FOUND)
@@ -65,16 +70,29 @@ def place_order(colony_hash):
     colony = Colony.get_from_database_by_hash(colony_hash)
 
     if colony is None:
-        return Response(consts.ERROR_NOT_FOUND, status=consts.ERROR_NOT_FOUND)
+        return Response(consts.ERROR_NOT_FOUND, status=consts.HTTP_NOT_FOUND)
 
     if colony.IsBanned():
         return Response(consts.ERROR_BANNED, status=consts.HTTP_FORBIDDEN)
 
-    request_data = request.json
+    ####
+    # WE MUST HAVE A SUBSCRIPTION TO PLACE AN ORDER
+    ####
+
+    if not colony.HasActiveSubscription():
+        return Response(consts.ERROR_NOT_FOUND, status=consts.HTTP_NOT_FOUND)
+
+    gz_post_data = request.files['order']
+
+    # Decompress payload
+    compressed_order = gzip.GzipFile(fileobj=gz_post_data, mode='r')
+
+    # Deserialize JSON
+    payload = json.loads(compressed_order.read().decode('UTF8'))
 
     # Check if these OrderThings exist in database.
-    things_sold_to_gwp = OrderThing.many_from_dict_and_check_exists(request_data['ThingsSoldToGwp'])
-    things_bought_from_gwp = OrderThing.many_from_dict_and_check_exists(request_data['ThingsBoughtFromGwp'])
+    things_sold_to_gwp = OrderThing.many_from_dict_and_check_exists(payload['ThingsSoldToGwp'])
+    things_bought_from_gwp = OrderThing.many_from_dict_and_check_exists(payload['ThingsBoughtFromGwp'])
 
     # We need to create any Things that don't exist so they can be updated later.
     # Things are created with zero quantity and will be updated when the order is done.
@@ -97,13 +115,18 @@ def place_order(colony_hash):
 
     order = Order(
         colony.Hash,
-        OrderedTick=int(request_data['CurrentGameTick']),
-        ThingsBoughtFromGwp=json.dumps(
-            [order_thing.to_dict(keep_quantity=True) for order_thing in things_bought_from_gwp.values()]),
+        OrderedTick=int(payload['CurrentGameTick']),
+        ThingsBoughtFromGwp=json.dumps([order_thing.to_dict(keep_quantity=True) for order_thing in
+                                        things_bought_from_gwp.values()]),
         ThingsSoldToGwp=json.dumps(
             [order_thing.to_dict(keep_quantity=True) for order_thing in things_sold_to_gwp.values()]),
-        DeliveryTick=int(int(request_data['CurrentGameTick']) + order_utils.get_ticks_needed_for_delivery())
+        DeliveryTick=int(int(payload['CurrentGameTick']) + order_utils.get_ticks_needed_for_delivery())
     )
+
+    pipe = db_connection.pipeline()
+    stock_control.give_things_to_colony(colony.Hash, things_bought_from_gwp.values(), pipe)
+    stock_control.receive_things_from_colony(colony.Hash, things_sold_to_gwp.values(), pipe)
+    pipe.execute()
 
     # Update database
     order.save_to_database(db_connection)
@@ -125,12 +148,16 @@ def place_order(colony_hash):
 def update_order(colony_hash, order_hash):
     db_connection = db.get_redis_db_from_context()
 
+    ####
+    # WE DON'T NEED A SUBSCRIPTION TO UPDATE THE ORDER STATUS
+    ####
+
     pipe = db_connection.pipeline()
 
     colony = Colony.get_from_database_by_hash(colony_hash)
 
     if not colony:
-        return Response(consts.ERROR_NOT_FOUND, status=consts.ERROR_NOT_FOUND)
+        return Response(consts.ERROR_NOT_FOUND, status=consts.HTTP_NOT_FOUND)
 
     if colony.IsBanned():
         return Response(consts.ERROR_BANNED, status=consts.HTTP_FORBIDDEN)
@@ -140,30 +167,31 @@ def update_order(colony_hash, order_hash):
     if not order:
         return Response(consts.ERROR_NOT_FOUND, status=consts.HTTP_NOT_FOUND)
 
-    status = request.json['Status']
+    new_status = request.json['Status']
 
-    if status in consts.ORDER_VALID_STATES:
-        order.Status = status
+    # Check that the state is not going backwards or is invalid.
+    if new_status in consts.ORDER_VALID_STATES:
+        if check_order_state_is_valid(order, new_status):
+            order.Status = new_status
+        else:
+            return Response(consts.ERROR_INVALID, status=consts.HTTP_INVALID)
     else:
         return Response(consts.ERROR_INVALID, status=consts.HTTP_INVALID)
 
-    if status == consts.ORDER_STATUS_FAIL:
+    if order.Status == consts.ORDER_STATUS_FAIL:
         # Remove order from list of new orders.
         pipe.lrem(consts.KEY_COLONY_NEW_ORDERS.format(colony.Hash), order.Hash, 0)
 
-    elif status == consts.ORDER_STATUS_DONE:
+    elif order.Status == consts.ORDER_STATUS_DONE:
         # Remove order from list of new orders.
         pipe.lrem(consts.KEY_COLONY_NEW_ORDERS.format(colony.Hash), order.Hash, 0)
 
         # Deserialize JSON back into OrderThings
         things_sold_to_gwp = [OrderThing.from_dict(saved_thing) for saved_thing in
-                              json.loads(order.ThingsSoldToGwp if len(order.ThingsSoldToGwp) > 0 else '[]')]
+                              (order.ThingsSoldToGwp if type(order.ThingsSoldToGwp) == list else '[]')]
 
         things_bought_from_gwp = [OrderThing.from_dict(saved_thing) for saved_thing in
-                                  json.loads(order.ThingsBoughtFromGwp if len(order.ThingsBoughtFromGwp) > 0 else '[]')]
-
-        stock_control.receive_things_from_colony(colony.Hash, things_sold_to_gwp, pipe)
-        stock_control.give_things_to_colony(colony.Hash, things_bought_from_gwp, pipe)
+                                  (order.ThingsBoughtFromGwp if type(order.ThingsBoughtFromGwp) == list else '[]')]
 
         # Update bucket timestamp and clear if needed.
         thing_stats.reset_thing_traded_stats_bucket()
@@ -187,6 +215,11 @@ def update_order(colony_hash, order_hash):
 @order_module.route('/<string:colony_hash>/<string:order_hash>', methods=['GET'])
 def get_order(colony_hash, order_hash):
     colony = Colony.get_from_database_by_hash(colony_hash)
+
+    ####
+    # WE DON'T NEED A SUBSCRIPTION TO GET THE ORDER STATUS
+    ####
+
     if not colony:
         return Response(consts.ERROR_NOT_FOUND, status=consts.HTTP_INVALID)
 
@@ -195,9 +228,23 @@ def get_order(colony_hash, order_hash):
         return Response(consts.ERROR_NOT_FOUND, status=consts.HTTP_NOT_FOUND)
 
     # Deserialize the Things Sold/Bought so they can be correctly re-serialized as dicts not JSON strings.
-    order.ThingsSoldToGwp = json.loads(order.ThingsSoldToGwp if len(order.ThingsSoldToGwp) > 0 else '[]')
-    order.ThingsBoughtFromGwp = json.loads(order.ThingsBoughtFromGwp if len(order.ThingsBoughtFromGwp) > 0 else '[]')
+    order.ThingsSoldToGwp = order.ThingsSoldToGwp if type(order.ThingsSoldToGwp) == list else '[]'
+    order.ThingsBoughtFromGwp = order.ThingsBoughtFromGwp if type(order.ThingsBoughtFromGwp) == list else '[]'
 
     colony.ping()
 
     return Response(json.dumps(order.to_dict()), status=consts.HTTP_OK, mimetype=consts.MIME_JSON)
+
+
+def check_order_state_is_valid(order, new_status):
+    if order.Status == 'new':
+        allowed_statuses = ['processed', 'failed']
+    elif order.Status == 'processed':
+        allowed_statuses = ['done', 'failed']
+    else:
+        return False
+
+    if new_status in allowed_statuses:
+        return True
+    else:
+        return False

@@ -14,6 +14,7 @@ class Thing(BaseThing):
         self._buy_price_override = float(kwargs.get('BuyPriceOverride', 0))
         self._sell_price_override = float(kwargs.get('SellPriceOverride', 0))
         self._from_database = False
+        self._localized_name = kwargs.get('LocalizedName', '')
 
     @property
     def CurrentSellPrice(self):
@@ -55,6 +56,15 @@ class Thing(BaseThing):
     def FromDatabase(self):
         return self._from_database
 
+    @property
+    def LocalizedName(self):
+        return self._localized_name
+
+    @LocalizedName.setter
+    def LocalizedName(self, value):
+        self._changes['LocalizedName'] = True
+        self._localized_name = value
+
     def to_dict(self, delta=False):
         to_save = {}
 
@@ -62,11 +72,16 @@ class Thing(BaseThing):
             for key in self._changes.keys():
                 to_save[key] = getattr(self, key)
         else:
-            for prop in self._iter_properties():
+            for prop in self.get_props():
                 to_save[prop] = getattr(self, prop)
+
+        # Remove these, we don't need to store them.
+        if 'FromDatabase' in to_save:
             del to_save['FromDatabase']
 
-        # del to_save['Hash']  # Should it store the hash? I can think of a few reasons why it could be useful.
+        if 'LocalizedName' in to_save:
+            del to_save['LocalizedName']
+
         return to_save
 
     def save_to_database(self, connection=None):

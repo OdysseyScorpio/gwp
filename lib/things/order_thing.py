@@ -23,7 +23,7 @@ class OrderThing(BaseThing):
     def to_dict(self, keep_quantity: bool = False) -> dict:
         to_save = {}
 
-        for prop in self._iter_properties():
+        for prop in self.get_props():
             to_save[prop] = getattr(self, prop)
 
         # Remove the flag.

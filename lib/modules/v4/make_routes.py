@@ -1,10 +1,10 @@
-from lib.modules.api import api_module
+from lib.modules.v4.api import api_module
 
-from lib.modules.colony import colony_module
-from lib.modules.market import market_module
-from lib.modules.orders import order_module
-from lib.modules.prime_subscription import prime_module
-from lib.modules.user import user_module
+from lib.modules.v4.colony import colony_module
+from lib.modules.v4.market import market_module
+from lib.modules.v4.orders import order_module
+from lib.modules.v4.prime_subscription import prime_module
+from lib.modules.v4.user import user_module
 
 
 def register(app, version):

@@ -1,5 +1,6 @@
 import hashlib
 from collections import OrderedDict
+from typing import List, Dict
 
 from lib import db, consts, date_utils
 
@@ -27,11 +28,15 @@ class Colony(object):
         self._owner_type = kwargs.get('OwnerType', None)
         self._owner_id = str(kwargs.get('OwnerID', None))
 
-        self._hash = kwargs.get('Hash', self.generate_hash(base_name, faction_name, planet, self._date_created))
+        self._hash = kwargs.get('Hash',
+                                self.generate_hash(base_name, faction_name, planet, self._owner_id, self._date_created))
 
         self._from_database = bool(kwargs.get('FromDatabase', False))
 
         self.__changes = {}
+        self.__supported_things = []
+        self.__mod_list = []
+        self.__has_subscription = None
 
     @property
     def DateCreated(self):
@@ -182,9 +187,9 @@ class Colony(object):
         return cls(colony['BaseName'], colony['FactionName'], colony['Planet'], **colony)
 
     @staticmethod
-    def generate_hash(base_name, faction_name, planet, date_created):
+    def generate_hash(base_name, faction_name, planet, owner_id, date_created):
         return hashlib.sha1(
-            ("{}{}{}{}".format(base_name, faction_name, planet, date_created)).encode('UTF8')
+            ("{}{}{}{}{}".format(base_name, faction_name, planet, owner_id, date_created)).encode('UTF8')
         ).hexdigest()
 
     @classmethod
@@ -292,6 +297,18 @@ class Colony(object):
             full_name += ' on {}'.format(self.Planet)
         return full_name
 
+    def Ban(self):
+        conn = db.get_redis_db_from_context()
+        # Make sure add the owners to the correct sets.
+        if self.OwnerType == 'Steam':
+            ban_key = consts.KEY_USER_STEAM_ID_BANNED_SET
+        elif self.OwnerType == 'Normal':
+            ban_key = consts.KEY_USER_NORMAL_ID_BANNED_SET
+        else:
+            return
+
+        conn.sadd(ban_key, self.OwnerID)
+
     def IsBanned(self):
         conn = db.get_redis_db_from_context()
         # Make sure add the owners to the correct sets.
@@ -308,3 +325,70 @@ class Colony(object):
 
     def __str__(self):
         return '{} ({})'.format(self.FullName, self.Hash)
+
+    def HasActiveSubscription(self):
+        """
+        Checks if the Colony has a Prime Sub, Lazily evaluated on prop access.
+        :return: bool, True if they have an active sub.
+        """
+        if not self.__has_subscription:
+            conn = db.get_redis_db_from_context()
+            ticks_remaining = conn.get(consts.KEY_PRIME_SUBSCRIPTION_DATA.format(self.Hash))
+            self.__has_subscription = True if ticks_remaining and ticks_remaining > 0 else False
+
+        return self.__has_subscription
+
+    @property
+    def SupportedThings(self):
+        """
+        Get the list of supported things, Lazily evaluated on prop access.
+        :return:
+        """
+        if not self.__supported_things:
+            conn = db.get_redis_db_from_context()
+
+            result = conn.get(consts.KEY_COLONY_SUPPORTED_THINGS.format(self.Hash))
+
+            if result:
+                self.__supported_things = result
+
+        return self.__supported_things
+
+    @SupportedThings.setter
+    def SupportedThings(self, supported_things: List[Dict[str, str]]):
+        """
+        Set the Colony's list of supported things immediately
+        :param supported_things: JSON encoded list of dict<str, str>
+        :return:
+        """
+        self.__supported_things = supported_things
+        conn = db.get_redis_db_from_context()
+        conn.set(consts.KEY_COLONY_SUPPORTED_THINGS.format(self.Hash), supported_things)
+
+    @property
+    def ModList(self):
+        """
+        Get the list of supported mods.
+        This field is lazily initialised on first request.
+        :return:
+        """
+        if not self.__mod_list:
+            conn = db.get_redis_db_from_context()
+
+            result = conn.get(consts.KEY_COLONY_MODS.format(self.Hash))
+
+            if result:
+                self.__mod_list = result
+
+        return self.__mod_list
+
+    @ModList.setter
+    def ModList(self, mod_list: List[str]):
+        """
+        Set the Colony's list of supported mods immediately
+        :param mod_list: JSON encoded list of str
+        :return:
+        """
+        self.__mod_list = mod_list
+        conn = db.get_redis_db_from_context()
+        conn.set(consts.KEY_COLONY_MODS.format(self.Hash), mod_list)

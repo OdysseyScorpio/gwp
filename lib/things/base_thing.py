@@ -3,6 +3,7 @@ from abc import ABC
 
 
 class BaseThing(ABC):
+    __properties = None
 
     def __init__(self, name: str, **kwargs):
         if name is None or name == '':
@@ -16,6 +17,12 @@ class BaseThing(ABC):
         self._minified_container = bool(kwargs.get('MinifiedContainer', False))
         self._hash = kwargs.get('Hash', self.calculate_hash(self.Name, self.Quality, self.StuffType))
         self._changes = {}
+
+    @classmethod
+    def get_props(cls):
+        if not cls.__properties:
+            cls.__properties = [prop for prop in cls._iter_properties()]
+        return cls.__properties
 
     @property
     def Name(self):

@@ -1,5 +1,3 @@
-import json
-
 import lib.things.stock
 from lib import db, consts
 from lib.colonies.colony import Colony
@@ -17,7 +15,6 @@ def get_ticks_needed_for_delivery():
 
 
 def anti_time_warp_check(colony, current_game_tick):
-
     # Test to see if the current tick is EARLIER than the last time we received a game tick.
     # This usually means they warped back in time due to an earlier game save.  
     if current_game_tick < colony.LastGameTick:
@@ -45,18 +42,23 @@ def rollback_orders_since_tick(colony: Colony, tick):
         if order.OrderedTick > tick:
 
             # If the transaction completed, we need to undo it.
-            if order.Status == consts.ORDER_STATUS_DONE:
+            # if order.Status == consts.ORDER_STATUS_DONE:
                 # Get things to add/remove from GWP.
                 # things_to_remove_from_gwp = OrderThing.from_dict_and_check_exists(json.loads(order.ThingsSoldToGwp))
-                things_bought_from_gwp = [OrderThing.from_dict(saved_thing) for saved_thing in
-                                          json.loads(order.ThingsBoughtFromGwp)]
 
-                # We don't remove things from GWP anymore if they time warp, we'll just keep hold of them.
-                # for thing in things_to_remove_from_gwp:
-                #     # Add namespace to item name to form Key
-                #     lib.things.stock.give_things_to_colony(Thing.calculate_hash_from_dict(thing), update_stats=False)
+            # Always re-add stock that was bought.
+            things_bought_from_gwp = [OrderThing.from_dict(saved_thing) for saved_thing in
+                                      order.ThingsBoughtFromGwp]
+            lib.things.stock.receive_things_from_colony(colony.Hash, things_bought_from_gwp)
 
-                lib.things.stock.receive_things_from_colony(colony.Hash, things_bought_from_gwp)
+            # We don't remove things from GWP anymore if they time warp, we'll just keep hold of them.
+            # for thing in things_to_remove_from_gwp:
+            #     # Add namespace to item name to form Key
+
+            things_sold_to_gwp = [OrderThing.from_dict(saved_thing) for saved_thing in
+                                  order.ThingsSoldToGwp]
+
+            lib.things.stock.give_things_to_colony(colony.Hash, things_sold_to_gwp)
 
             # Mark it reversed
             order.Status = consts.ORDER_STATUS_REVERSE

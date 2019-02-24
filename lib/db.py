@@ -3,17 +3,27 @@ Created on 16 Jan 2018
 
 @author: aleyshon
 """
-import ast
+from json import JSONDecoder
 
 import redis
 from flask import g
 
 import config
 
+decoder = JSONDecoder()
+
 
 def try_auto_parse(val):
     try:
-        val = ast.literal_eval(val)
+        # Quick fixes for broken True/False strings in Redis
+        if val == "False":
+            return False
+        elif val == "True":
+            return True
+        elif val == "None":
+            return None
+        else:
+            val = decoder.decode(val)
     except Exception:
         pass
     return val

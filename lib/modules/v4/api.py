@@ -6,7 +6,7 @@ from lib import db
 from lib.consts import KEY_API_MAINTENANCE_MODE, \
     KEY_API_MAINTENANCE_WINDOW, KEY_API_VERSION
 
-api_module = Blueprint('v3_api_module', __name__, url_prefix='/v3/application')
+api_module = Blueprint('v4_api_module', __name__, url_prefix='/application')
 
 
 @api_module.route('/maintenance/mode', methods=['GET'])

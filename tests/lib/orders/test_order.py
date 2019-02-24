@@ -1,25 +1,14 @@
 import json
 
 import redis
-from flask import g
 from pytest import fixture
 
-import app
 from lib import consts
 from lib.colonies.colony import Colony
-from lib.db import get_redis_database_connection, get_redis_db_from_context
+from lib.db import get_redis_db_from_context
 from lib.orders.order import Order
 from lib.things.order_thing import OrderThing
 from lib.things.thing import Thing
-
-
-@fixture()
-def test_app_context():
-    a = app.make_app()
-    a.config['TESTING'] = True
-    with a.app_context():
-        g._database = get_redis_database_connection(db_number=15)
-        yield a
 
 
 class TestOrderClass:
@@ -175,7 +164,7 @@ class TestOrderClass:
 
         order_a = Order.get_from_database_by_hash(order_a.Hash)
 
-        things_bought_from_gwp = OrderThing.many_from_dict_and_check_exists(json.loads(order_a.ThingsBoughtFromGwp))
+        things_bought_from_gwp = OrderThing.many_from_dict_and_check_exists(order_a.ThingsBoughtFromGwp)
 
         first_item = list(things_bought_from_gwp.values())[0].to_dict(keep_quantity=True)
 
@@ -190,7 +179,7 @@ class TestOrderClass:
 
         order_a = Order.get_from_database_by_hash(order_a.Hash)
 
-        things_bought_from_gwp = Thing.get_many_from_database(json.loads(order_a.ThingsBoughtFromGwp))
+        things_bought_from_gwp = Thing.get_many_from_database(order_a.ThingsBoughtFromGwp)
 
         first_item = list(things_bought_from_gwp.values())[0].to_dict()
 
