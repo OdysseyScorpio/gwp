@@ -70,7 +70,7 @@ class TestThingClass:
 
         do_exec = False
 
-        if not isinstance(connection, redis.client.BasePipeline):
+        if not isinstance(connection, redis.client.Pipeline):
             connection = connection.pipeline()
             do_exec = True
 

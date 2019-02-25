@@ -64,7 +64,7 @@ def rollback_orders_since_tick(colony: Colony, tick):
             order.Status = consts.ORDER_STATUS_REVERSE
 
             # Remove it from the colonies processing list.
-            pipe.lrem(consts.KEY_COLONY_NEW_ORDERS.format(colony.Hash), order.Hash)
+            pipe.lrem(consts.KEY_COLONY_NEW_ORDERS.format(colony.Hash), 0, order.Hash)
 
             order.save_to_database(pipe)
 

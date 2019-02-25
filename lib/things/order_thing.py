@@ -74,7 +74,7 @@ class OrderThing(BaseThing):
 
         for hash_key, exists in results.items():
             current_app.logger.debug('{} exists: {}'.format(hash_key, exists))
-            things_to_find[hash_key].ThingExists = exists
+            things_to_find[hash_key].ThingExists = bool(exists)
             results[hash_key] = things_to_find[hash_key]
 
         return results
@@ -87,7 +87,7 @@ class OrderThing(BaseThing):
         thing_obj = cls.from_dict(order_thing_dict)
         result = db_connection.exists(consts.KEY_THING_META.format(thing_obj.Hash))
 
-        if result is True:
+        if result:
             thing_obj.ThingExists = True
 
         return thing_obj
