@@ -82,6 +82,12 @@ class Thing(BaseThing):
         if 'LocalizedName' in to_save:
             del to_save['LocalizedName']
 
+        if 'UseServerPrice' in to_save:
+            to_save['UseServerPrice'] = 'true' if to_save['UseServerPrice'] else 'false'
+
+        if 'MinifiedContainer' in to_save:
+            to_save['MinifiedContainer'] = 'true' if to_save['MinifiedContainer'] else 'false'
+
         return to_save
 
     def save_to_database(self, connection=None):

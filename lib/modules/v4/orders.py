@@ -180,11 +180,11 @@ def update_order(colony_hash, order_hash):
 
     if order.Status == consts.ORDER_STATUS_FAIL:
         # Remove order from list of new orders.
-        pipe.lrem(consts.KEY_COLONY_NEW_ORDERS.format(colony.Hash), order.Hash, 0)
+        pipe.lrem(consts.KEY_COLONY_NEW_ORDERS.format(colony.Hash), 0, order.Hash)
 
     elif order.Status == consts.ORDER_STATUS_DONE:
         # Remove order from list of new orders.
-        pipe.lrem(consts.KEY_COLONY_NEW_ORDERS.format(colony.Hash), order.Hash, 0)
+        pipe.lrem(consts.KEY_COLONY_NEW_ORDERS.format(colony.Hash), 0, order.Hash)
 
         # Deserialize JSON back into OrderThings
         things_sold_to_gwp = [OrderThing.from_dict(saved_thing) for saved_thing in

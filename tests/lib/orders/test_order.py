@@ -56,7 +56,9 @@ class TestOrderClass:
                 'BaseName': 'TestColonyA',
                 'FactionName': 'TestFactionA',
                 'Planet': 'TestPlanetA',
-                'DateCreated': 1
+                'DateCreated': 1,
+                'OwnerType': 'Normal',
+                'OwnerID': 1
             }
         )
         return a
@@ -83,15 +85,15 @@ class TestOrderClass:
 
         do_exec = False
 
-        if not isinstance(connection, redis.client.BasePipeline):
+        if not isinstance(connection, redis.client.Pipeline):
             connection = connection.pipeline()
             do_exec = True
 
         connection.delete(consts.KEY_ORDER_MANIFEST.format(order.Hash))
 
         # Remove the key from the index if it already exists
-        connection.lrem(consts.KEY_COLONY_NEW_ORDERS.format(order.OwnerID), order.Hash, 0)
-        connection.lrem(consts.KEY_COLONY_ALL_ORDERS.format(order.OwnerID), order.Hash, 0)
+        connection.lrem(consts.KEY_COLONY_NEW_ORDERS.format(order.OwnerID), 0, order.Hash)
+        connection.lrem(consts.KEY_COLONY_ALL_ORDERS.format(order.OwnerID), 0, order.Hash)
 
         # Write the Colony to the database.
         order.save_to_database(connection)
@@ -104,7 +106,7 @@ class TestOrderClass:
 
         do_exec = False
 
-        if not isinstance(connection, redis.client.BasePipeline):
+        if not isinstance(connection, redis.client.Pipeline):
             connection = connection.pipeline()
             do_exec = True
 
@@ -181,12 +183,10 @@ class TestOrderClass:
 
         things_bought_from_gwp = Thing.get_many_from_database(order_a.ThingsBoughtFromGwp)
 
-        first_item = list(things_bought_from_gwp.values())[0].to_dict()
-
-        for k, v in thing_a_bought.items():
-            assert first_item[k] == v
+        first_item = list(things_bought_from_gwp.values())[0]
 
         thing = Thing.get_from_database(thing_a_bought)
 
         assert thing.FromDatabase
         assert thing.Quantity == thing_a_bought['Quantity']
+        assert thing.Hash == first_item.Hash

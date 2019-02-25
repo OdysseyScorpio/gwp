@@ -1,4 +1,5 @@
 import hashlib
+import json
 from collections import OrderedDict
 from typing import List, Dict
 
@@ -17,6 +18,15 @@ class Colony(object):
         if not planet:
             raise ValueError('Must specify a Planet name!')
 
+        if 'OwnerType' not in kwargs:
+            raise ValueError('No Owner Type set, must be Normal or Steam')
+
+        if 'OwnerID' not in kwargs:
+            raise ValueError('No Owner ID set')
+
+        self._owner_type = kwargs['OwnerType']
+        self._owner_id = str(kwargs['OwnerID'])
+
         self._base_name = base_name
         self._faction_name = faction_name
         self._planet = planet
@@ -25,8 +35,6 @@ class Colony(object):
         self._last_action = int(kwargs.get('LastAction', self._date_created))
         self._last_game_tick = int(kwargs.get('LastGameTick', 0))
         self._timewarps = int(kwargs.get('Timewarps', 0))
-        self._owner_type = kwargs.get('OwnerType', None)
-        self._owner_id = str(kwargs.get('OwnerID', None))
 
         self._hash = kwargs.get('Hash',
                                 self.generate_hash(base_name, faction_name, planet, self._owner_id, self._date_created))
@@ -149,6 +157,11 @@ class Colony(object):
             for prop in self.iter_properties():
                 to_save[prop] = getattr(self, prop)
             del to_save['FromDatabase']
+
+        if 'SupportedThings' in to_save:
+            del to_save['SupportedThings']
+        if 'ModList' in to_save:
+            del to_save['ModList']
 
         # del to_save['Hash']  # Should it store the hash? I can think of a few reasons why it could be useful.
         return to_save
@@ -391,4 +404,4 @@ class Colony(object):
         """
         self.__mod_list = mod_list
         conn = db.get_redis_db_from_context()
-        conn.set(consts.KEY_COLONY_MODS.format(self.Hash), mod_list)
+        conn.set(consts.KEY_COLONY_MODS.format(self.Hash), json.dumps(mod_list))

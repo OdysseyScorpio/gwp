@@ -16,7 +16,9 @@ class TestColonyClass:
                 'BaseName': 'TestColonyA',
                 'FactionName': 'TestFactionA',
                 'Planet': 'TestPlanetA',
-                'DateCreated': 1
+                'DateCreated': 1,
+                'OwnerType': 'Normal',
+                'OwnerID': 1
             }
         )
         return a
@@ -29,7 +31,9 @@ class TestColonyClass:
                 'BaseName': 'TestColonyB',
                 'FactionName': 'TestFactionB',
                 'Planet': 'TestPlanetB',
-                'Hash': 'ABCD'
+                'Hash': 'ABCD',
+                'OwnerType': 'Normal',
+                'OwnerID': 1
             }
         )
         return b
@@ -54,19 +58,20 @@ class TestColonyClass:
 
         do_exec = False
 
-        if not isinstance(connection, redis.client.BasePipeline):
+        if not isinstance(connection, redis.client.Pipeline):
             connection = connection.pipeline()
             do_exec = True
 
         connection.delete(consts.KEY_COLONY_METADATA.format(colony.Hash))
 
         # Remove the key from the index if it already exists
-        connection.lrem(consts.KEY_COLONY_INDEX_BY_ID, colony.Hash, 0)
+        connection.lrem(consts.KEY_COLONY_INDEX_BY_ID, 0, colony.Hash)
 
         # Remove key from Steam User keys
         if colony.OwnerType == 'Steam':
             connection.lrem(
                 consts.KEY_COLONY_INDEX_BY_STEAM_ID.format(colony.OwnerID),
+                0,
                 colony.Hash
             )
 
@@ -148,7 +153,9 @@ class TestColonyClass:
                 'BaseName': 'TestColonyC',
                 'FactionName': 'TestFactionC',
                 'Planet': 'TestPlanetC',
-                'Hash': 'EFGH'
+                'Hash': 'EFGH',
+                'OwnerType': 'Normal',
+                'OwnerID': 1
             }
         )
         colony_data = [a.to_dict(), b.to_dict(), c.to_dict()]
@@ -172,7 +179,9 @@ class TestColonyClass:
                 'BaseName': 'TestColonyA',
                 'FactionName': 'TestFactionA',
                 'Planet': 'TestPlanetA',
-                'Hash': '1234'
+                'Hash': '1234',
+                'OwnerType': 'Normal',
+                'OwnerID': 1
             }
         )
         b = Colony.from_dict(
@@ -180,7 +189,9 @@ class TestColonyClass:
                 'BaseName': 'TestColonyB',
                 'FactionName': 'TestFactionB',
                 'Planet': 'TestPlanetB',
-                'Hash': '5678'
+                'Hash': '5678',
+                'OwnerType': 'Normal',
+                'OwnerID': 1
             }
         )
         c = Colony.from_dict(
@@ -188,7 +199,9 @@ class TestColonyClass:
                 'BaseName': 'TestColonyC',
                 'FactionName': 'TestFactionC',
                 'Planet': 'TestPlanetC',
-                'Hash': 'EFGH'
+                'Hash': 'EFGH',
+                'OwnerType': 'Normal',
+                'OwnerID': 1
             }
         )
         colony_data = [a.to_dict(), b.to_dict(), c.to_dict()]
@@ -211,7 +224,7 @@ class TestColonyClass:
 
         o = Colony.from_dict(fixture_colony_a.to_dict())
 
-        assert "6088d480fb5c7a539d83be169d708c457a9a077f" == o.Hash
+        assert "87a41f64617b379cb80c7123351b35db356c97c8" == o.Hash
 
     def test_save_and_load(self, test_app_context, fixture_colony_a):
 

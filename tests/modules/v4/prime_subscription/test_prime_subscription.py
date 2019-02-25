@@ -58,7 +58,7 @@ class TestColoniesPut:
         assert result.json
         assert "TickSubscriptionExpires" in result.json
         assert "SubscriptionCost" in result.json
-        assert 'Token' not in result.json
+        assert 'Token' in result.json
 
     @pytest.mark.parametrize("version", versions)
     @pytest.mark.parametrize("market", markets)
