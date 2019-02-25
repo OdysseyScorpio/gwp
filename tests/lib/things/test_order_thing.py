@@ -42,14 +42,14 @@ class TestOrderThingClass:
             connection.execute()
 
     def test_all_exist(self, test_app_context, a, b, c):
-
+        connection = get_redis_db_from_context()
         thing_data = [a, b, c]
 
-        self.setup_data_in_db(Thing.from_dict(a), get_redis_db_from_context())
-        self.setup_data_in_db(Thing.from_dict(b), get_redis_db_from_context())
-        self.setup_data_in_db(Thing.from_dict(c), get_redis_db_from_context())
+        self.setup_data_in_db(Thing.from_dict(a), connection)
+        self.setup_data_in_db(Thing.from_dict(b), connection)
+        self.setup_data_in_db(Thing.from_dict(c), connection)
 
-        result = OrderThing.many_from_dict_and_check_exists(thing_data).values()
+        result = OrderThing.many_from_dict_and_check_exists(thing_data, connection).values()
 
         s = zip(thing_data, result)
 
@@ -57,31 +57,31 @@ class TestOrderThingClass:
             assert a['Name'] == b.Name and b.ThingExists
 
     def test_one_exists(self, test_app_context, a):
+        connection = get_redis_db_from_context()
+        self.setup_data_in_db(Thing.from_dict(a), connection)
 
-        self.setup_data_in_db(Thing.from_dict(a), get_redis_db_from_context())
-
-        result = OrderThing.from_dict_and_check_exists(a)
+        result = OrderThing.from_dict_and_check_exists(a, connection)
 
         assert a['Name'] == result.Name
         assert result.ThingExists
 
     def test_one_not_exists(self, test_app_context):
-
+        connection = get_redis_db_from_context()
         thing_data = {'Name': 'Non-existent thing'}
 
-        result = OrderThing.from_dict_and_check_exists(thing_data)
+        result = OrderThing.from_dict_and_check_exists(thing_data, connection)
 
         assert thing_data['Name'] == result.Name
         assert not result.ThingExists
 
     def test_one_in_many_not_exist(self, test_app_context, a, c):
+        connection = get_redis_db_from_context()
         b = {'Name': 'Nonexistent', 'StuffType': 'WoodenLog'}
         thing_data = [a, b, c]
+        self.setup_data_in_db(Thing.from_dict(a), connection)
+        self.setup_data_in_db(Thing.from_dict(c), connection)
 
-        self.setup_data_in_db(Thing.from_dict(a), get_redis_db_from_context())
-        self.setup_data_in_db(Thing.from_dict(c), get_redis_db_from_context())
-
-        result = list(OrderThing.many_from_dict_and_check_exists(thing_data).values())
+        result = list(OrderThing.many_from_dict_and_check_exists(thing_data, connection).values())
 
         assert len(result) == 3
         assert result[0].Name == a['Name'] and result[0].ThingExists

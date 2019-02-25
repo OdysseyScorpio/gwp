@@ -44,7 +44,7 @@ def get_orders(colony_hash):
     current_tick = int(current_tick)
 
     # Prevent market manipulation.
-    order_utils.anti_time_warp_check(colony, current_tick)
+    order_utils.anti_time_warp_check(colony, current_tick, connection)
 
     # Construct dict of orders.
 
@@ -92,8 +92,8 @@ def place_order(colony_hash):
     payload = json.loads(compressed_order.read().decode('UTF8'))
 
     # Check if these OrderThings exist in database.
-    things_sold_to_gwp = OrderThing.many_from_dict_and_check_exists(payload['ThingsSoldToGwp'])
-    things_bought_from_gwp = OrderThing.many_from_dict_and_check_exists(payload['ThingsBoughtFromGwp'])
+    things_sold_to_gwp = OrderThing.many_from_dict_and_check_exists(payload['ThingsSoldToGwp'], connection)
+    things_bought_from_gwp = OrderThing.many_from_dict_and_check_exists(payload['ThingsBoughtFromGwp'], connection)
 
     # We need to create any Things that don't exist so they can be updated later.
     # Things are created with zero quantity and will be updated when the order is done.
@@ -114,11 +114,16 @@ def place_order(colony_hash):
 
     create_missing_things.execute()
 
-    order = Order(colony.Hash, connection, OrderedTick=int(payload['CurrentGameTick']),
-                  ThingsBoughtFromGwp=json.dumps([order_thing.to_dict(keep_quantity=True) for order_thing in
-                                                  things_bought_from_gwp.values()]), ThingsSoldToGwp=json.dumps(
-            [order_thing.to_dict(keep_quantity=True) for order_thing in things_sold_to_gwp.values()]),
-                  DeliveryTick=int(int(payload['CurrentGameTick']) + order_utils.get_ticks_needed_for_delivery()))
+    json_thing_bought = [order_thing.to_dict(keep_quantity=True) for order_thing in things_bought_from_gwp.values()]
+    json_thing_sold = [order_thing.to_dict(keep_quantity=True) for order_thing in things_sold_to_gwp.values()]
+
+    order = Order(colony.Hash,
+                  connection=connection,
+                  OrderedTick=int(payload['CurrentGameTick']),
+                  ThingsBoughtFromGwp=json.dumps(json_thing_bought),
+                  ThingsSoldToGwp=json.dumps(json_thing_sold),
+                  DeliveryTick=int(
+                      int(payload['CurrentGameTick']) + order_utils.get_ticks_needed_for_delivery(connection)))
 
     pipe = connection.pipeline()
     stock_control.give_things_to_colony(colony.Hash, things_bought_from_gwp.values(), pipe)
@@ -127,14 +132,14 @@ def place_order(colony_hash):
 
     # Update database
     order.save_to_database(connection)
-    order_stats.increment_order_counter()
-    order_stats.update_orders_placed_by_hour()
+    order_stats.increment_order_counter(connection)
+    order_stats.update_orders_placed_by_hour(connection)
     colony.ping()
 
     # Try to send message to queue.
     try:
         message = OrderMessage.prepare(db.get_market_name(), things_bought_from_gwp, things_sold_to_gwp, colony)
-        send(message)
+        send(message, connection)
     except Exception:
         pass  # IDGAF
 
@@ -191,7 +196,7 @@ def update_order(colony_hash, order_hash):
                                   (order.ThingsBoughtFromGwp if type(order.ThingsBoughtFromGwp) == list else '[]')]
 
         # Update bucket timestamp and clear if needed.
-        thing_stats.reset_thing_traded_stats_bucket()
+        thing_stats.reset_thing_traded_stats_bucket(connection)
 
         # Update statistics for things being sold.
         for order_thing in things_sold_to_gwp:

@@ -2,7 +2,8 @@ import redis
 from pytest import fixture
 
 import lib.gwpcc.consts as consts
-from lib.db import get_redis_database_connection, get_redis_db_from_context
+from lib import db
+from lib.db import get_redis_db_from_context
 from lib.gwpcc.things.thing import Thing
 
 
@@ -21,14 +22,14 @@ class TestThingClass:
         return {'Name': 'TestS', 'StuffType': 'WoodenLog'}
 
     def test_all_exist(self, test_app_context, a, b, c):
-
+        connection = db.get_redis_db_from_context()
         thing_data = [a, b, c]
 
         self.setup_data_in_db(Thing.from_dict(a), get_redis_db_from_context())
         self.setup_data_in_db(Thing.from_dict(b), get_redis_db_from_context())
         self.setup_data_in_db(Thing.from_dict(c), get_redis_db_from_context())
 
-        result = Thing.get_many_from_database(thing_data).values()
+        result = Thing.get_many_from_database(thing_data, connection).values()
 
         s = zip(thing_data, result)
 
@@ -36,13 +37,14 @@ class TestThingClass:
             assert a['Name'] == b.Name and b.FromDatabase
 
     def test_one_doesnt_exist(self, test_app_context, a, c):
+        connection = db.get_redis_db_from_context()
         b = {'Name': 'Nonexistent', 'StuffType': 'WoodenLog'}
         thing_data = [a, b, c]
 
         self.setup_data_in_db(Thing.from_dict(a), get_redis_db_from_context())
         self.setup_data_in_db(Thing.from_dict(c), get_redis_db_from_context())
 
-        result = list(Thing.get_many_from_database(thing_data).values())
+        result = list(Thing.get_many_from_database(thing_data, connection).values())
 
         assert len(result) == 3
         assert result[0].Name == a['Name'] and result[0].FromDatabase
@@ -50,11 +52,12 @@ class TestThingClass:
         assert result[2].Name == c['Name'] and result[2].FromDatabase
 
     def test_all_none(self, test_app_context):
+        connection = db.get_redis_db_from_context()
         a = {'Name': 'Nonexistent1', 'Quality': 'Good'}
         b = {'Name': 'Nonexistent2', 'StuffType': 'WoodenLog'}
         c = {'Name': 'Nonexistent3', 'Quality': 'Good', 'StuffType': 'WoodenLog'}
         thing_data = [a, b, c]
-        result = Thing.get_many_from_database(thing_data).values()
+        result = Thing.get_many_from_database(thing_data, connection).values()
         s = list(zip(thing_data, result))
 
         assert len(s) == 3
@@ -62,8 +65,9 @@ class TestThingClass:
             assert not b.FromDatabase
 
     def test_nonexistent(self, test_app_context):
+        connection = db.get_redis_db_from_context()
         thing_data = {'Name': 'Doesn\'t_exist'}
-        assert not Thing.get_from_database(thing_data).FromDatabase
+        assert not Thing.get_from_database(thing_data, connection).FromDatabase
 
     @staticmethod
     def setup_data_in_db(thing: Thing, connection):
@@ -85,23 +89,26 @@ class TestThingClass:
         if do_exec:
             connection.execute()
 
-    def test_name_with_quality_and_stuff(self, test_app_context, a):
+    def test_name_withquality_and_stuff(self, test_app_context, a):
+        connection = db.get_redis_db_from_context()
         thing_data = a
         a = Thing.from_dict(thing_data)
-        self.setup_data_in_db(a, get_redis_db_from_context())
-        b = Thing.get_from_database(thing_data)
+        self.setup_data_in_db(a, connection)
+        b = Thing.get_from_database(thing_data, connection)
         assert b.Hash == '4f57967468deccdb718432a13fdd55eef9f8bd4f'
 
     def test_name_with_quality(self, test_app_context, b):
+        connection = db.get_redis_db_from_context()
         a = Thing.from_dict(b)
-        self.setup_data_in_db(a, get_redis_db_from_context())
-        b = Thing.get_from_database(b)
+        self.setup_data_in_db(a, connection)
+        b = Thing.get_from_database(b, connection)
         assert b.Hash == 'aafd448dfc6644cd92bdab58470a5f52d56677ec'
 
     def test_name_with_stuff(self, test_app_context, c):
+        connection = db.get_redis_db_from_context()
         a = Thing.from_dict(c)
-        self.setup_data_in_db(a, get_redis_db_from_context())
-        b = Thing.get_from_database(c)
+        self.setup_data_in_db(a, connection)
+        b = Thing.get_from_database(c, connection)
         assert b.Hash == 'f1987009817fdc766c908591571982ace2f211d0'
 
     def test_class_init(self):
@@ -131,7 +138,7 @@ class TestThingClass:
         assert '4f57967468deccdb718432a13fdd55eef9f8bd4f' == o.Hash
 
     def test_save_and_load(self, test_app_context):
-
+        connection = db.get_redis_db_from_context()
         d = {'Name': 'TestSaveAndLoad',
              'Quality': 'Good',
              'StuffType': 'Silver',
@@ -145,21 +152,19 @@ class TestThingClass:
         o_save = Thing.from_dict(d)
         od = o_save.to_dict()
 
-        db = get_redis_database_connection(db_number=15)
-
         # Remove the key from the index if it already exists
-        db.srem(consts.KEY_THING_INDEX, o_save.Hash)
+        connection.srem(consts.KEY_THING_INDEX, o_save.Hash)
 
         # Write the Thing to the database.
-        o_save.save_to_database(db)
+        o_save.save_to_database(connection)
 
         # It should be near the end of the list.
-        is_member = db.sismember(consts.KEY_THING_INDEX, o_save.Hash)
+        is_member = connection.sismember(consts.KEY_THING_INDEX, o_save.Hash)
 
         assert is_member
 
         # Reload it as a new object
-        o_loaded = Thing.get_from_database(o_save.to_dict())
+        o_loaded = Thing.get_from_database(o_save.to_dict(), connection)
 
         assert o_loaded.FromDatabase
         assert o_loaded.Hash == o_save.Hash
@@ -168,6 +173,7 @@ class TestThingClass:
             assert od[k] == v
 
     def test_load_modify_save(self, test_app_context):
+        connection = db.get_redis_db_from_context()
         d = {'Name': 'TestSaveAndLoadDifference',
              'Quality': 'Good',
              'StuffType': 'Silver',
@@ -181,21 +187,19 @@ class TestThingClass:
         a = Thing.from_dict(d)
         ad = a.to_dict()
 
-        db = get_redis_database_connection(db_number=15)
-
         # Remove the key from the index if it already exists
-        db.srem(consts.KEY_THING_INDEX, a.Hash)
+        connection.srem(consts.KEY_THING_INDEX, a.Hash)
 
         # Write the Thing to the database.
-        a.save_to_database(db)
+        a.save_to_database(connection)
 
         # It should be near the end of the list.
-        is_member = db.sismember(consts.KEY_THING_INDEX, a.Hash)
+        is_member = connection.sismember(consts.KEY_THING_INDEX, a.Hash)
 
         assert is_member
 
         # Reload it as a new object
-        b = Thing.get_from_database(a.to_dict())
+        b = Thing.get_from_database(a.to_dict(), connection)
 
         assert b.Hash == a.Hash
 
@@ -204,8 +208,8 @@ class TestThingClass:
 
         b.Quantity = 50
 
-        b.save_to_database(db)
+        b.save_to_database(connection)
 
-        c = Thing.from_dict(db.hgetall(consts.KEY_THING_META.format(a.Hash)))
+        c = Thing.from_dict(connection.hgetall(consts.KEY_THING_META.format(a.Hash)))
 
         assert c.Quantity == 50
