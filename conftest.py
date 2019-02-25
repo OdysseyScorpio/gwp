@@ -4,9 +4,9 @@ from flask import g
 from pytest import fixture
 
 import app
-from lib import consts
 from lib.db import get_redis_database_connection
-from lib.things.thing import Thing
+from lib.gwpcc import consts
+from lib.gwpcc.things.thing import Thing
 
 
 @fixture(scope='session')

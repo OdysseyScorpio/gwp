@@ -6,7 +6,7 @@ import pytest
 from flask import Flask
 
 from config import API_DB_CONFIG
-from lib import consts
+from lib.gwpcc import consts
 from tests.modules.v4.helpers import make_user, make_colony, make_prime
 
 versions = ['v4']

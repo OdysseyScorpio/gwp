@@ -1,5 +1,5 @@
 import config
-import lib.consts as const
+import lib.gwpcc.consts as const
 from lib.db import get_redis_database_connection
 
 ok = False

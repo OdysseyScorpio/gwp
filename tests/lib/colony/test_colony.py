@@ -1,9 +1,10 @@
 import redis
 from pytest import fixture
 
-from lib import date_utils, consts
-from lib.colonies.colony import Colony
+from lib import db
 from lib.db import get_redis_db_from_context
+from lib.gwpcc import consts, date_utils
+from lib.gwpcc.colonies.colony import Colony
 
 
 class TestColonyClass:
@@ -19,7 +20,8 @@ class TestColonyClass:
                 'DateCreated': 1,
                 'OwnerType': 'Normal',
                 'OwnerID': 1
-            }
+            },
+            connection=db.get_redis_db_from_context()
         )
         return a
 
@@ -34,7 +36,8 @@ class TestColonyClass:
                 'Hash': 'ABCD',
                 'OwnerType': 'Normal',
                 'OwnerID': 1
-            }
+            },
+            connection=db.get_redis_db_from_context()
         )
         return b
 
@@ -49,7 +52,8 @@ class TestColonyClass:
                 'DateCreated': 100,
                 'OwnerType': 'Steam',
                 'OwnerID': '76561198275909496'
-            }
+            },
+            connection=db.get_redis_db_from_context()
         )
         return s
 
@@ -85,7 +89,7 @@ class TestColonyClass:
         connection = get_redis_db_from_context()
         self.setup_data_in_db(fixture_colony_steam, connection)
 
-        result = Colony.get_from_database_by_hash(fixture_colony_steam.Hash)
+        result = Colony.get_from_database_by_hash(fixture_colony_steam.Hash, db.get_redis_db_from_context())
 
         assert result.FromDatabase
 
@@ -132,7 +136,7 @@ class TestColonyClass:
 
         colony_data = [a.to_dict(), b.to_dict(), c.to_dict()]
 
-        result = Colony.get_many_from_database(colony_data)
+        result = Colony.get_many_from_database(colony_data, db.get_redis_db_from_context())
 
         s = zip(colony_data, result.values())
 
@@ -156,11 +160,12 @@ class TestColonyClass:
                 'Hash': 'EFGH',
                 'OwnerType': 'Normal',
                 'OwnerID': 1
-            }
+            },
+            connection=db.get_redis_db_from_context()
         )
         colony_data = [a.to_dict(), b.to_dict(), c.to_dict()]
 
-        result = list(Colony.get_many_from_database(colony_data).values())
+        result = list(Colony.get_many_from_database(colony_data, db.get_redis_db_from_context()).values())
 
         assert len(result) == 3
         assert result[0].BaseName == a.BaseName and result[0].FromDatabase
@@ -182,7 +187,8 @@ class TestColonyClass:
                 'Hash': '1234',
                 'OwnerType': 'Normal',
                 'OwnerID': 1
-            }
+            },
+            connection=db.get_redis_db_from_context()
         )
         b = Colony.from_dict(
             {
@@ -192,7 +198,8 @@ class TestColonyClass:
                 'Hash': '5678',
                 'OwnerType': 'Normal',
                 'OwnerID': 1
-            }
+            },
+            connection=db.get_redis_db_from_context()
         )
         c = Colony.from_dict(
             {
@@ -202,10 +209,11 @@ class TestColonyClass:
                 'Hash': 'EFGH',
                 'OwnerType': 'Normal',
                 'OwnerID': 1
-            }
+            },
+            connection=db.get_redis_db_from_context()
         )
         colony_data = [a.to_dict(), b.to_dict(), c.to_dict()]
-        result = Colony.get_many_from_database(colony_data)
+        result = Colony.get_many_from_database(colony_data, db.get_redis_db_from_context())
         s = list(zip(colony_data, result.values()))
 
         assert len(s) == 3
@@ -215,14 +223,14 @@ class TestColonyClass:
     def test_class_init_from_dict_to_dict(self, test_app_context, fixture_colony_a):
 
         a_dict = fixture_colony_a.to_dict()
-        b = Colony.from_dict(a_dict).to_dict()
+        b = Colony.from_dict(a_dict, db.get_redis_db_from_context()).to_dict()
 
         for k, v in b.items():
             assert a_dict[k] == v
 
     def test_class_init_from_dict_hash(self, test_app_context, fixture_colony_a):
 
-        o = Colony.from_dict(fixture_colony_a.to_dict())
+        o = Colony.from_dict(fixture_colony_a.to_dict(), db.get_redis_db_from_context())
 
         assert "87a41f64617b379cb80c7123351b35db356c97c8" == o.Hash
 
@@ -238,7 +246,7 @@ class TestColonyClass:
         assert fixture_colony_a.Hash in index
 
         # Reload it as a new object
-        o_loaded = Colony.get_from_database(fixture_colony_a.to_dict())
+        o_loaded = Colony.get_from_database(fixture_colony_a.to_dict(), db.get_redis_db_from_context())
 
         assert o_loaded.FromDatabase
         assert o_loaded.Hash == fixture_colony_a.Hash
@@ -267,7 +275,7 @@ class TestColonyClass:
         assert fixture_colony_steam.Hash in steam_index
 
         # Reload it as a new object
-        o_loaded = Colony.get_from_database(fixture_colony_steam.to_dict())
+        o_loaded = Colony.get_from_database(fixture_colony_steam.to_dict(), db.get_redis_db_from_context())
 
         assert o_loaded.FromDatabase
         assert o_loaded.Hash == fixture_colony_steam.Hash
@@ -289,7 +297,7 @@ class TestColonyClass:
         assert fixture_colony_a.Hash in index
 
         # Reload it as a new object
-        b = Colony.get_from_database(ad)
+        b = Colony.get_from_database(ad, db.get_redis_db_from_context())
 
         assert b.Hash == fixture_colony_a.Hash
 
@@ -300,6 +308,6 @@ class TestColonyClass:
 
         b.save_to_database(connection)
 
-        c = Colony.get_from_database(ad)
+        c = Colony.get_from_database(ad, db.get_redis_db_from_context())
 
         assert c.LastAction == b.LastAction

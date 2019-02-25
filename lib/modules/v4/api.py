@@ -3,7 +3,7 @@ import json
 from flask import Blueprint, Response
 
 from lib import db
-from lib.consts import KEY_API_MAINTENANCE_MODE, \
+from lib.gwpcc.consts import KEY_API_MAINTENANCE_MODE, \
     KEY_API_MAINTENANCE_WINDOW, KEY_API_VERSION
 
 api_module = Blueprint('v4_api_module', __name__, url_prefix='/application')
