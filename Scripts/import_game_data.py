@@ -1,9 +1,9 @@
 import json
 
 import config
-import lib.consts
+import lib.gwpcc.consts
 from lib.db import get_redis_database_connection
-from lib.things.thing import Thing
+from lib.gwpcc.things.thing import Thing
 
 ok = False
 version = None
@@ -47,11 +47,11 @@ with open('{}_thing_data_{}.json'.format(version, language), 'r', encoding='utf-
             thing.save_to_database(pipe)
 
         if not language_added:
-            pipe.sadd(lib.consts.KEY_THING_LOCALE_KNOWN_LANGUAGES, thing_data['LanguageCode'])
+            pipe.sadd(lib.gwpcc.consts.KEY_THING_LOCALE_KNOWN_LANGUAGES, thing_data['LanguageCode'])
             language_added = True
 
         # Set full name for Thing, Ours is the version of truth, give it a high score.
-        pipe.zadd(lib.consts.KEY_THING_LOCALE_THING_NAMES.format(thing_data['LanguageCode'], thing.Hash),
+        pipe.zadd(lib.gwpcc.consts.KEY_THING_LOCALE_THING_NAMES.format(thing_data['LanguageCode'], thing.Hash),
                   {thing_data['LocalizedName']: 1000})
 
 count = len(pipe.execute())

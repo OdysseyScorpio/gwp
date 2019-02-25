@@ -1,8 +1,8 @@
 from flask import request, Response, current_app, g
 
 from config import API_DB_CONFIG
-from lib import consts
 from lib.db import get_redis_db_from_context
+from lib.gwpcc import consts
 
 
 def set_database_connection():

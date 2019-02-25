@@ -3,10 +3,11 @@ import json
 
 from flask import Blueprint, Response, request, escape
 
-from lib import consts, db
-from lib.colonies.colony import Colony
-from lib.consts import KEY_THING_LOCALE_THING_NAMES, USER_TYPES
-from lib.things.thing import Thing
+from lib import db
+from lib.gwpcc import consts
+from lib.gwpcc.colonies.colony import Colony
+from lib.gwpcc.consts import KEY_THING_LOCALE_THING_NAMES, USER_TYPES
+from lib.gwpcc.things.thing import Thing
 
 colony_module = Blueprint('v4_colony_module', __name__, url_prefix='/v4/colonies')
 
@@ -14,20 +15,21 @@ colony_module = Blueprint('v4_colony_module', __name__, url_prefix='/v4/colonies
 @colony_module.route('/create', methods=['PUT'])
 def colony_create():
     incoming_data = request.json
-
-    colony = new_colony_from_request(incoming_data)
+    connection = db.get_redis_db_from_context()
+    colony = new_colony_from_request(incoming_data, connection)
 
     if not any(allowed_type == colony.OwnerType for allowed_type in USER_TYPES):
         return Response(consts.ERROR_INVALID, status=consts.HTTP_INVALID)
 
-    colony.save_to_database(db.get_redis_db_from_context())
+    colony.save_to_database(connection)
 
     colony.ping()
 
     return Response(json.dumps({'Hash': colony.Hash}), status=201, mimetype='application/json')
 
 
-def new_colony_from_request(incoming_data):
+def new_colony_from_request(incoming_data, connection):
+
     new_colony = {'BaseName': escape(incoming_data['BaseName']),
                   'FactionName': escape(incoming_data['FactionName']),
                   'Planet': escape(incoming_data['Planet']),
@@ -35,12 +37,13 @@ def new_colony_from_request(incoming_data):
                   'OwnerID': escape(incoming_data['OwnerID']),
                   'LastGameTick': escape(incoming_data['LastGameTick'])}
 
-    return Colony.from_dict(new_colony)
+    return Colony.from_dict(new_colony, connection=connection)
 
 
 @colony_module.route('/<string:colony_hash>', methods=['PUT'])
 def colony_update_data(colony_hash):
-    colony = Colony.get_from_database_by_hash(colony_hash)
+    connection = db.get_redis_db_from_context()
+    colony = Colony.get_from_database_by_hash(colony_hash, connection)
 
     incoming_data = request.json
 
@@ -49,7 +52,7 @@ def colony_update_data(colony_hash):
     if not colony or colony.OwnerID != incoming_data['OwnerID']:
         # If the Owner ID's don't match. Create a new colony.
         # And assign it a new ID. Might have happened if save sharing.
-        colony = new_colony_from_request(incoming_data)
+        colony = new_colony_from_request(incoming_data, connection)
         created = True
     else:
         colony.BaseName = escape(incoming_data['BaseName'])
@@ -59,7 +62,7 @@ def colony_update_data(colony_hash):
         if incoming_data['HasSpawned']:
             colony.Ban()
 
-    pipe = db.get_redis_db_from_context().pipeline()
+    pipe = connection.pipeline()
 
     if colony.IsBanned():
         return Response(consts.ERROR_BANNED, status=consts.HTTP_FORBIDDEN)
@@ -85,7 +88,7 @@ def colony_update_data(colony_hash):
 
 @colony_module.route('/<string:colony_hash>', methods=['GET'])
 def colony_get_data(colony_hash):
-    colony = Colony.get_from_database_by_hash(colony_hash)
+    colony = Colony.get_from_database_by_hash(colony_hash, db.get_redis_db_from_context())
 
     if not colony:
         return Response(consts.ERROR_NOT_FOUND, status=consts.HTTP_NOT_FOUND)
@@ -95,7 +98,7 @@ def colony_get_data(colony_hash):
 
 @colony_module.route('/<string:colony_hash>/thing_metadata', methods=['PUT'])
 def colony_set_supported_things(colony_hash: str):
-    colony = Colony.get_from_database_by_hash(colony_hash)
+    colony = Colony.get_from_database_by_hash(colony_hash, db.get_redis_db_from_context())
     if not colony:
         return Response(consts.ERROR_NOT_FOUND, status=consts.HTTP_NOT_FOUND)
 
@@ -135,7 +138,7 @@ def colony_set_supported_things(colony_hash: str):
 
 @colony_module.route('/<string:colony_hash>/mod_metadata', methods=['PUT'])
 def colony_set_mods(colony_hash: str):
-    colony = Colony.get_from_database_by_hash(colony_hash)
+    colony = Colony.get_from_database_by_hash(colony_hash, db.get_redis_db_from_context())
     if not colony:
         return Response(consts.ERROR_NOT_FOUND, status=consts.HTTP_NOT_FOUND)
 

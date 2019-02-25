@@ -1,10 +1,10 @@
 import redis
 from pytest import fixture
 
-import lib.consts as consts
+import lib.gwpcc.consts as consts
 from lib.db import get_redis_db_from_context
-from lib.things.order_thing import OrderThing
-from lib.things.thing import Thing
+from lib.gwpcc.things.order_thing import OrderThing
+from lib.gwpcc.things.thing import Thing
 
 
 class TestOrderThingClass:

@@ -3,17 +3,18 @@ import json
 
 from flask import Blueprint, Response, request, current_app
 
-import lib.orders.stats as order_stats
-import lib.orders.utils as order_utils
-import lib.things.stats as thing_stats
-import lib.things.stock as stock_control
-from lib import consts, db
-from lib.colonies.colony import Colony
-from lib.orders.order import Order
-from lib.qevent.event import send
-from lib.qevent.messages.order import OrderMessage
-from lib.things.order_thing import OrderThing
-from lib.things.thing import Thing
+import lib.gwpcc.orders.stats as order_stats
+import lib.gwpcc.orders.utils as order_utils
+import lib.gwpcc.things.stats as thing_stats
+import lib.gwpcc.things.stock as stock_control
+from lib import db
+from lib.gwpcc import consts
+from lib.gwpcc.colonies.colony import Colony
+from lib.gwpcc.orders.order import Order
+from lib.gwpcc.qevent.event import send
+from lib.gwpcc.qevent.messages.order import OrderMessage
+from lib.gwpcc.things.order_thing import OrderThing
+from lib.gwpcc.things.thing import Thing
 
 order_module = Blueprint('v4_prime_orders', __name__, url_prefix='/v4/orders')
 
@@ -23,7 +24,7 @@ def get_orders(colony_hash):
     db_connection = db.get_redis_db_from_context()
     response = dict()
 
-    colony = Colony.get_from_database_by_hash(colony_hash)
+    colony = Colony.get_from_database_by_hash(colony_hash, db.get_redis_db_from_context())
 
     ####
     # WE DON'T NEED A SUBSCRIPTION TO GET THE ORDER LIST
@@ -67,7 +68,7 @@ def get_orders(colony_hash):
 def place_order(colony_hash):
     db_connection = db.get_redis_db_from_context()
 
-    colony = Colony.get_from_database_by_hash(colony_hash)
+    colony = Colony.get_from_database_by_hash(colony_hash, db.get_redis_db_from_context())
 
     if colony is None:
         return Response(consts.ERROR_NOT_FOUND, status=consts.HTTP_NOT_FOUND)
@@ -154,7 +155,7 @@ def update_order(colony_hash, order_hash):
 
     pipe = db_connection.pipeline()
 
-    colony = Colony.get_from_database_by_hash(colony_hash)
+    colony = Colony.get_from_database_by_hash(colony_hash, db.get_redis_db_from_context())
 
     if not colony:
         return Response(consts.ERROR_NOT_FOUND, status=consts.HTTP_NOT_FOUND)
@@ -214,7 +215,7 @@ def update_order(colony_hash, order_hash):
 
 @order_module.route('/<string:colony_hash>/<string:order_hash>', methods=['GET'])
 def get_order(colony_hash, order_hash):
-    colony = Colony.get_from_database_by_hash(colony_hash)
+    colony = Colony.get_from_database_by_hash(colony_hash, db.get_redis_db_from_context())
 
     ####
     # WE DON'T NEED A SUBSCRIPTION TO GET THE ORDER STATUS

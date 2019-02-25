@@ -3,10 +3,10 @@ import json
 
 from flask import Blueprint, Response, request, current_app
 
-from lib import consts, db
-from lib import date_utils
-from lib.colonies.colony import Colony
-from lib.things.thing import Thing
+from lib import db
+from lib.gwpcc import consts, date_utils
+from lib.gwpcc.colonies.colony import Colony
+from lib.gwpcc.things.thing import Thing
 
 prime_module = Blueprint('v4_prime_subscription', __name__, url_prefix='/v4/prime_subscription')
 
@@ -19,7 +19,7 @@ def subscription_check(colony_hash):
     db_connection = db.get_redis_db_from_context()
     response = dict()
 
-    colony = Colony.get_from_database_by_hash(colony_hash)
+    colony = Colony.get_from_database_by_hash(colony_hash, db.get_redis_db_from_context())
 
     if not colony:
         current_app.logger.error('{} colony not found in database'.format(colony.Hash))
@@ -60,7 +60,7 @@ def make_token(colony_id):
 def subscription_update(colony_hash):
     db_connection = db.get_redis_db_from_context()
 
-    colony = Colony.get_from_database_by_hash(colony_hash)
+    colony = Colony.get_from_database_by_hash(colony_hash, db.get_redis_db_from_context())
 
     if not colony:
         current_app.logger.error('{} colony not found in database'.format(colony.Hash))

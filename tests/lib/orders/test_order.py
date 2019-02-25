@@ -3,12 +3,13 @@ import json
 import redis
 from pytest import fixture
 
-from lib import consts
-from lib.colonies.colony import Colony
+from lib import db
 from lib.db import get_redis_db_from_context
-from lib.orders.order import Order
-from lib.things.order_thing import OrderThing
-from lib.things.thing import Thing
+from lib.gwpcc import consts
+from lib.gwpcc.colonies.colony import Colony
+from lib.gwpcc.orders.order import Order
+from lib.gwpcc.things.order_thing import OrderThing
+from lib.gwpcc.things.thing import Thing
 
 
 class TestOrderClass:
@@ -59,7 +60,8 @@ class TestOrderClass:
                 'DateCreated': 1,
                 'OwnerType': 'Normal',
                 'OwnerID': 1
-            }
+            },
+            connection=db.get_redis_db_from_context()
         )
         return a
 

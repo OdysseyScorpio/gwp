@@ -4,7 +4,8 @@ from datetime import datetime
 
 from flask import Blueprint, Response, request, escape, current_app
 
-from lib import consts, db
+from lib import db
+from lib.gwpcc import consts
 
 user_module = Blueprint('v4_user_module', __name__, url_prefix='/v4/user')
 
