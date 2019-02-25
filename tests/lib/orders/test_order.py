@@ -70,16 +70,15 @@ class TestOrderClass:
     def order_a(cls) -> Order:
         colony = cls.fixture_colony_a()
 
-        order: Order = Order.from_order_data_dict(
-            {
-                'OwnerID': colony.Hash,
-                'OrderedTick': 1000,
-                'ThingsBoughtFromGwp': json.dumps(
-                    [OrderThing.from_dict(cls.thing_a_bought()).to_dict(keep_quantity=True)]),
-                'ThingsSoldToGwp': json.dumps([OrderThing.from_dict(cls.thing_a_sold()).to_dict(keep_quantity=True)]),
-                'DeliveryTick': 10000
-            }
-        )
+        order: Order = Order.from_order_data_dict({
+            'OwnerID': colony.Hash,
+            'OrderedTick': 1000,
+            'ThingsBoughtFromGwp': json.dumps(
+                [OrderThing.from_dict(cls.thing_a_bought()).to_dict(keep_quantity=True)]),
+            'ThingsSoldToGwp': json.dumps([OrderThing.from_dict(cls.thing_a_sold()).to_dict(keep_quantity=True)]),
+            'DeliveryTick': 10000
+        }, connection=db.get_redis_db_from_context())
+
         return order
 
     @staticmethod
@@ -97,11 +96,12 @@ class TestOrderClass:
         connection.lrem(consts.KEY_COLONY_NEW_ORDERS.format(order.OwnerID), 0, order.Hash)
         connection.lrem(consts.KEY_COLONY_ALL_ORDERS.format(order.OwnerID), 0, order.Hash)
 
+        if do_exec:
+            connection.execute()
+
         # Write the Colony to the database.
         order.save_to_database(connection)
 
-        if do_exec:
-            connection.execute()
 
     @staticmethod
     def setup_data_in_db(thing: Thing, connection):
@@ -137,36 +137,36 @@ class TestOrderClass:
         assert order_a.FromDatabase is False
 
     def test_is_from_database(self, test_app_context, order_a):
-        db = get_redis_db_from_context()
+        connection = get_redis_db_from_context()
 
-        self.setup_order_data_in_db(order_a, db)
+        self.setup_order_data_in_db(order_a, connection)
 
         order_hash = order_a.Hash
 
-        order_a = Order.get_from_database_by_hash(order_hash)
+        order_a = Order.get_from_database_by_hash(order_hash, connection)
 
         assert order_a.FromDatabase
 
     def test_is_from_database_many(self, test_app_context, order_a):
-        db = get_redis_db_from_context()
+        connection = get_redis_db_from_context()
 
-        self.setup_order_data_in_db(order_a, db)
+        self.setup_order_data_in_db(order_a, connection)
 
         order_hash = [order_a.Hash]
 
-        orders = Order.get_many_from_database(order_hash)
+        orders = Order.get_many_from_database(order_hash, connection)
 
         result = list(orders.values())[0]
 
         assert result.Hash == order_a.Hash
 
     def test_can_deserialize_into_order_thing(self, test_app_context, order_a, thing_a_bought):
-        db = get_redis_db_from_context()
+        connection = get_redis_db_from_context()
 
-        self.setup_order_data_in_db(order_a, db)
-        self.setup_data_in_db(Thing.from_dict(self.thing_a_bought()), db)
+        self.setup_order_data_in_db(order_a, connection)
+        self.setup_data_in_db(Thing.from_dict(self.thing_a_bought()), connection)
 
-        order_a = Order.get_from_database_by_hash(order_a.Hash)
+        order_a = Order.get_from_database_by_hash(order_a.Hash, connection)
 
         things_bought_from_gwp = OrderThing.many_from_dict_and_check_exists(order_a.ThingsBoughtFromGwp)
 
@@ -176,12 +176,12 @@ class TestOrderClass:
             assert first_item[k] == v
 
     def test_can_deserialize_into_thing(self, test_app_context, order_a, thing_a_bought):
-        db = get_redis_db_from_context()
+        connection = get_redis_db_from_context()
 
-        self.setup_order_data_in_db(order_a, db)
-        self.setup_data_in_db(Thing.from_dict(self.thing_a_bought()), db)
+        self.setup_order_data_in_db(order_a, connection)
+        self.setup_data_in_db(Thing.from_dict(self.thing_a_bought()), connection)
 
-        order_a = Order.get_from_database_by_hash(order_a.Hash)
+        order_a = Order.get_from_database_by_hash(order_a.Hash, connection)
 
         things_bought_from_gwp = Thing.get_many_from_database(order_a.ThingsBoughtFromGwp)
 

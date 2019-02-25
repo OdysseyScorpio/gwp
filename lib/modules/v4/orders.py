@@ -21,7 +21,7 @@ order_module = Blueprint('v4_prime_orders', __name__, url_prefix='/v4/orders')
 
 @order_module.route('/<string:colony_hash>', methods=['GET'])
 def get_orders(colony_hash):
-    db_connection = db.get_redis_db_from_context()
+    connection = db.get_redis_db_from_context()
     response = dict()
 
     colony = Colony.get_from_database_by_hash(colony_hash, db.get_redis_db_from_context())
@@ -48,9 +48,9 @@ def get_orders(colony_hash):
 
     # Construct dict of orders.
 
-    orders = list(db_connection.lrange(consts.KEY_COLONY_NEW_ORDERS.format(colony.Hash), 0, -1))
+    orders = list(connection.lrange(consts.KEY_COLONY_NEW_ORDERS.format(colony.Hash), 0, -1))
 
-    order_data = Order.get_many_from_database(orders)
+    order_data = Order.get_many_from_database(orders, connection)
 
     return_list = [order.to_dict(just_headers=True) for order in order_data.values() if
                    order.Status in [consts.ORDER_STATUS_NEW, consts.ORDER_STATUS_PROCESSED]]
@@ -66,7 +66,7 @@ def get_orders(colony_hash):
 
 @order_module.route('/<string:colony_hash>', methods=['PUT'])
 def place_order(colony_hash):
-    db_connection = db.get_redis_db_from_context()
+    connection = db.get_redis_db_from_context()
 
     colony = Colony.get_from_database_by_hash(colony_hash, db.get_redis_db_from_context())
 
@@ -97,7 +97,7 @@ def place_order(colony_hash):
 
     # We need to create any Things that don't exist so they can be updated later.
     # Things are created with zero quantity and will be updated when the order is done.
-    create_missing_things = db_connection.pipeline()
+    create_missing_things = connection.pipeline()
     for thing_hash, order_thing in things_sold_to_gwp.items():
         if not order_thing.ThingExists:
             thing = Thing.from_dict(order_thing.to_dict())
@@ -114,23 +114,19 @@ def place_order(colony_hash):
 
     create_missing_things.execute()
 
-    order = Order(
-        colony.Hash,
-        OrderedTick=int(payload['CurrentGameTick']),
-        ThingsBoughtFromGwp=json.dumps([order_thing.to_dict(keep_quantity=True) for order_thing in
-                                        things_bought_from_gwp.values()]),
-        ThingsSoldToGwp=json.dumps(
+    order = Order(colony.Hash, connection, OrderedTick=int(payload['CurrentGameTick']),
+                  ThingsBoughtFromGwp=json.dumps([order_thing.to_dict(keep_quantity=True) for order_thing in
+                                                  things_bought_from_gwp.values()]), ThingsSoldToGwp=json.dumps(
             [order_thing.to_dict(keep_quantity=True) for order_thing in things_sold_to_gwp.values()]),
-        DeliveryTick=int(int(payload['CurrentGameTick']) + order_utils.get_ticks_needed_for_delivery())
-    )
+                  DeliveryTick=int(int(payload['CurrentGameTick']) + order_utils.get_ticks_needed_for_delivery()))
 
-    pipe = db_connection.pipeline()
+    pipe = connection.pipeline()
     stock_control.give_things_to_colony(colony.Hash, things_bought_from_gwp.values(), pipe)
     stock_control.receive_things_from_colony(colony.Hash, things_sold_to_gwp.values(), pipe)
     pipe.execute()
 
     # Update database
-    order.save_to_database(db_connection)
+    order.save_to_database(connection)
     order_stats.increment_order_counter()
     order_stats.update_orders_placed_by_hour()
     colony.ping()
@@ -147,15 +143,15 @@ def place_order(colony_hash):
 
 @order_module.route('/<string:colony_hash>/<string:order_hash>', methods=['POST'])
 def update_order(colony_hash, order_hash):
-    db_connection = db.get_redis_db_from_context()
+    connection = db.get_redis_db_from_context()
 
     ####
     # WE DON'T NEED A SUBSCRIPTION TO UPDATE THE ORDER STATUS
     ####
 
-    pipe = db_connection.pipeline()
+    pipe = connection.pipeline()
 
-    colony = Colony.get_from_database_by_hash(colony_hash, db.get_redis_db_from_context())
+    colony = Colony.get_from_database_by_hash(colony_hash, connection)
 
     if not colony:
         return Response(consts.ERROR_NOT_FOUND, status=consts.HTTP_NOT_FOUND)
@@ -163,7 +159,7 @@ def update_order(colony_hash, order_hash):
     if colony.IsBanned():
         return Response(consts.ERROR_BANNED, status=consts.HTTP_FORBIDDEN)
 
-    order = Order.get_from_database_by_hash(order_hash)
+    order = Order.get_from_database_by_hash(order_hash, connection)
 
     if not order:
         return Response(consts.ERROR_NOT_FOUND, status=consts.HTTP_NOT_FOUND)
@@ -215,7 +211,8 @@ def update_order(colony_hash, order_hash):
 
 @order_module.route('/<string:colony_hash>/<string:order_hash>', methods=['GET'])
 def get_order(colony_hash, order_hash):
-    colony = Colony.get_from_database_by_hash(colony_hash, db.get_redis_db_from_context())
+    connection = db.get_redis_db_from_context()
+    colony = Colony.get_from_database_by_hash(colony_hash, connection)
 
     ####
     # WE DON'T NEED A SUBSCRIPTION TO GET THE ORDER STATUS
@@ -224,7 +221,7 @@ def get_order(colony_hash, order_hash):
     if not colony:
         return Response(consts.ERROR_NOT_FOUND, status=consts.HTTP_INVALID)
 
-    order = Order.get_from_database_by_hash(order_hash)
+    order = Order.get_from_database_by_hash(order_hash, connection)
     if not order:
         return Response(consts.ERROR_NOT_FOUND, status=consts.HTTP_NOT_FOUND)
 
