@@ -29,7 +29,6 @@ def colony_create():
 
 
 def new_colony_from_request(incoming_data, connection):
-
     new_colony = {'BaseName': escape(incoming_data['BaseName']),
                   'FactionName': escape(incoming_data['FactionName']),
                   'Planet': escape(incoming_data['Planet']),
@@ -59,8 +58,9 @@ def colony_update_data(colony_hash):
         colony.FactionName = escape(incoming_data['FactionName'])
         colony.Planet = escape(incoming_data['Planet'])
         colony.LastGameTick = escape(incoming_data['LastGameTick'])
-        if incoming_data['HasSpawned']:
-            colony.Ban()
+        # Disable bans for now
+        # if incoming_data['HasSpawned']:
+        #    colony.Ban()
 
     pipe = connection.pipeline()
 
