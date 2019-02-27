@@ -58,9 +58,8 @@ def colony_update_data(colony_hash):
         colony.FactionName = escape(incoming_data['FactionName'])
         colony.Planet = escape(incoming_data['Planet'])
         colony.LastGameTick = escape(incoming_data['LastGameTick'])
-        # Disable bans for now
-        # if incoming_data['HasSpawned']:
-        #    colony.Ban()
+        if incoming_data['HasSpawned']:
+            colony.Ban()
 
     pipe = connection.pipeline()
 
