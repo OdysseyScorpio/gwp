@@ -10,3 +10,4 @@ redis
 Werkzeug
 pytest
 pytest-cov
+sentry-sdk[flask]
