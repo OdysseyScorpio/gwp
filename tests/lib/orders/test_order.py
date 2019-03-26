@@ -67,15 +67,15 @@ class TestOrderClass:
 
     @classmethod
     @fixture
-    def order_a(cls) -> Order:
-        colony = cls.fixture_colony_a()
+    def order_a(cls, fixture_colony_a, thing_a_bought, thing_a_sold) -> Order:
+        colony = fixture_colony_a
 
         order: Order = Order.from_order_data_dict({
             'OwnerID': colony.Hash,
             'OrderedTick': 1000,
             'ThingsBoughtFromGwp': json.dumps(
-                [OrderThing.from_dict(cls.thing_a_bought()).to_dict(keep_quantity=True)]),
-            'ThingsSoldToGwp': json.dumps([OrderThing.from_dict(cls.thing_a_sold()).to_dict(keep_quantity=True)]),
+                [OrderThing.from_dict(thing_a_bought).to_dict(keep_quantity=True)]),
+            'ThingsSoldToGwp': json.dumps([OrderThing.from_dict(thing_a_sold).to_dict(keep_quantity=True)]),
             'DeliveryTick': 10000
         }, connection=db.get_redis_db_from_context())
 
@@ -163,7 +163,7 @@ class TestOrderClass:
         connection = get_redis_db_from_context()
 
         self.setup_order_data_in_db(order_a, connection)
-        self.setup_data_in_db(Thing.from_dict(self.thing_a_bought()), connection)
+        self.setup_data_in_db(Thing.from_dict(thing_a_bought), connection)
 
         order_a = Order.get_from_database_by_hash(order_a.Hash, connection)
 
@@ -178,7 +178,7 @@ class TestOrderClass:
         connection = get_redis_db_from_context()
 
         self.setup_order_data_in_db(order_a, connection)
-        self.setup_data_in_db(Thing.from_dict(self.thing_a_bought()), connection)
+        self.setup_data_in_db(Thing.from_dict(thing_a_bought), connection)
 
         order_a = Order.get_from_database_by_hash(order_a.Hash, connection)
 

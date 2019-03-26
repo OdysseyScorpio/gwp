@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "197a2a783a1cd103e0ae65f8097bb28c05bb557da41c530b8aba55b20d84b545"
+            "sha256": "a070d1ee0b29bc24ef8e5502c6510d3f77bfa41256500adbe775fc4e6c134084"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -265,6 +265,13 @@
                 "sha256:d16a0141ec1a18405cd4ce8b4613101da75da0e9a7aec5bdd4fa804d0e0eba73"
             ],
             "version": "==1.12.0"
+        },
+        "teamcity-messages": {
+            "hashes": [
+                "sha256:22deaa6d8c03cd701a3e524d01c009bc93146430e4c0c93530a7d01bf90c712c"
+            ],
+            "index": "pypi",
+            "version": "==1.24"
         },
         "urllib3": {
             "hashes": [

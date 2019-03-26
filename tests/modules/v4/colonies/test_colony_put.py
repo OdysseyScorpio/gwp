@@ -4,6 +4,8 @@ import pytest
 from flask import Flask
 
 from config import API_DB_CONFIG
+from lib.db import get_redis_database_connection
+from lib.gwpcc import consts
 from tests.modules.v4.helpers import make_user, make_colony
 
 versions = ['v4']
@@ -73,7 +75,11 @@ class TestColoniesPut:
         }
 
         result = client.put(url, data=json.dumps(colony_metadata), mimetype='application/json')
-        assert result.status_code == 403
+        assert result.status_code == 200
+
+        # Check the the user is in the moderation queue.
+        redis = get_redis_database_connection(db_number=15)
+        assert redis.sismember(consts.KEY_USER_NORMAL_ID_MODERATE_SET, user_id)
 
     @pytest.mark.parametrize("version", versions)
     @pytest.mark.parametrize("market", markets)
@@ -97,7 +103,12 @@ class TestColoniesPut:
         }
 
         result = client.put(url, data=json.dumps(colony_metadata), mimetype='application/json')
-        assert result.status_code == 403
+        assert result.status_code == 200
+
+        # Check the the user is in the moderation queue.
+        redis = get_redis_database_connection(db_number=15)
+        assert redis.sismember(consts.KEY_USER_STEAM_ID_MODERATE_SET, user_id)
+
 
     @pytest.mark.parametrize("version", versions)
     @pytest.mark.parametrize("market", markets)
