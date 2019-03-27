@@ -1,4 +1,5 @@
 from flask import Flask
+from flask import current_app
 from flask_compress import Compress
 from werkzeug.middleware.proxy_fix import ProxyFix
 
@@ -7,17 +8,26 @@ from lib.api import set_database_connection
 from lib.modules.v4 import make_routes as make_routes_v4
 
 
+def before_send(event, hint):
+    a = current_app
+    if a and a.config.get('TESTING', False):
+        return None
+
+    return event
+
+
 def make_app():
     import sentry_sdk
     from sentry_sdk.integrations.flask import FlaskIntegration
 
     sentry_sdk.init(
         dsn="https://6d5e55bd65094408b11d053eb3ab7328@sentry.thecodecache.net/3",
-        integrations=[FlaskIntegration()]
+        integrations=[FlaskIntegration()],
+        before_send=before_send
     )
 
     app = Flask(__name__)
-    app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_host=1, x_port=1, x_prefix=1, x_proto=1)
+    app.wsgi_app = ProxyFix(app.wsgi_app, x_for=2, x_host=2, x_port=2, x_prefix=2, x_proto=2)
 
     app.config.update(
         DEBUG=config.DEBUG_MODE,

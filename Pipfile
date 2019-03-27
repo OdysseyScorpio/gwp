@@ -19,7 +19,6 @@ werkzeug = "*"
 pytest = "*"
 pytest-cov = "*"
 sentry-sdk = {extras = ["flask"],version = "*"}
-teamcity-messages = "*"
 
 [requires]
 python_version = "3.7"
