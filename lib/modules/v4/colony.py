@@ -130,7 +130,7 @@ def colony_set_supported_things(colony_hash: str):
     pipe.execute()
 
     # This is immediately saved.
-    colony.SupportedThings = json.dumps(supported_things_json)
+    colony.SupportedThings = supported_things_json
 
     return Response('OK', status=200, mimetype='application/json')
 
