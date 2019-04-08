@@ -4,7 +4,7 @@ from flask_compress import Compress
 from werkzeug.middleware.proxy_fix import ProxyFix
 
 import config
-from lib.api import set_database_connection
+from lib.api import set_database_connection, collect_sentry_tags
 from lib.modules.v4 import make_routes as make_routes_v4
 
 
@@ -40,6 +40,7 @@ def make_app():
     # Install a hooks to setup the database connection
     # according to the API version requested and log request/response.
     app.before_request(set_database_connection)
+    app.before_request(collect_sentry_tags)
     # app.before_request(log_request_info)
     # app.after_request(log_response)
 

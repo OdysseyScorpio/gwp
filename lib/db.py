@@ -53,7 +53,7 @@ def parse_boolean_responses_get(response, **options):
 
 
 def get_market_name():
-    return getattr(g, '_market', 'unknown')
+    return getattr(g, 'gwp_market', 'unknown')
 
 
 def get_redis_database_connection(db_number=0):
