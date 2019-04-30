@@ -56,13 +56,13 @@ def get_market_name():
     return getattr(g, 'gwp_market', 'unknown')
 
 
-def get_redis_database_connection(db_number=0):
+def get_redis_database_connection(db_number=0, redis_client=redis.Redis):
     """
     Create a new Redis database connection.
     :return:
     """
 
-    db = redis.Redis(config.DATABASE_IP, config.DATABASE_PORT, decode_responses=True, db=db_number)
+    db = redis_client(config.DATABASE_IP, config.DATABASE_PORT, decode_responses=True, db=db_number)
 
     db.set_response_callback('GET', parse_boolean_responses_get)
     db.set_response_callback('HGET', parse_boolean_responses_get)
