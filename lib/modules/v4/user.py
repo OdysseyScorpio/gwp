@@ -45,7 +45,7 @@ def reactivate():
     accept = False
     # Has it expired or ever existed?
     if token_in_db is None:
-        current_app.logger.error('{} activation token was not in database or has expired.'.format(token))
+        current_app.logger.warning('{} activation token was not in database or has expired.'.format(token))
     else:
         # They should match
         if token_in_db != token:

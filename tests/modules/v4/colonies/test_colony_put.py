@@ -1,7 +1,9 @@
 import json
 
+import fakeredis
 import pytest
 from flask import Flask
+from flask import g
 
 from config import API_DB_CONFIG
 from lib.db import get_redis_database_connection
@@ -25,13 +27,13 @@ class TestColoniesPut:
         url = '/{}/{}/colonies/{}'.format(version, market, colony_id)
 
         colony_metadata = {
-            'BaseName': 'TestBase',
-            'FactionName': 'TestFaction',
-            'Planet': 'TestPlanet',
-            'OwnerType': 'Steam',
-            'OwnerID': user_id,
+            'BaseName'    : 'TestBase',
+            'FactionName' : 'TestFaction',
+            'Planet'      : 'TestPlanet',
+            'OwnerType'   : 'Steam',
+            'OwnerID'     : user_id,
             'LastGameTick': 1,
-            'HasSpawned': False
+            'HasSpawned'  : False
         }
 
         result = client.put(url, data=json.dumps(colony_metadata), mimetype='application/json')
@@ -47,13 +49,13 @@ class TestColoniesPut:
         user_id = make_user(client, version, market)
 
         colony_metadata = {
-            'BaseName': 'TestBase',
-            'FactionName': 'TestFaction',
-            'Planet': 'TestPlanet',
-            'OwnerType': 'Normal',
-            'OwnerID': user_id,
+            'BaseName'    : 'TestBase',
+            'FactionName' : 'TestFaction',
+            'Planet'      : 'TestPlanet',
+            'OwnerType'   : 'Normal',
+            'OwnerID'     : user_id,
             'LastGameTick': 1,
-            'HasSpawned': False
+            'HasSpawned'  : False
         }
 
         url = '/{}/{}/colonies/create'.format(version, market)
@@ -65,20 +67,20 @@ class TestColoniesPut:
         url = '/{}/{}/colonies/{}'.format(version, market, colony_id)
 
         colony_metadata = {
-            'BaseName': 'TestBase',
-            'FactionName': 'TestFaction',
-            'Planet': 'TestPlanet',
-            'OwnerType': 'Normal',
-            'OwnerID': user_id,
+            'BaseName'    : 'TestBase',
+            'FactionName' : 'TestFaction',
+            'Planet'      : 'TestPlanet',
+            'OwnerType'   : 'Normal',
+            'OwnerID'     : user_id,
             'LastGameTick': 1,
-            'HasSpawned': True
+            'HasSpawned'  : True
         }
 
         result = client.put(url, data=json.dumps(colony_metadata), mimetype='application/json')
         assert result.status_code == 200
 
         # Check the the user is in the moderation queue.
-        redis = get_redis_database_connection(db_number=15)
+        redis = g._database
         assert redis.sismember(consts.KEY_USER_NORMAL_ID_MODERATE_SET, user_id)
 
     @pytest.mark.parametrize("version", versions)
@@ -93,22 +95,21 @@ class TestColoniesPut:
         url = '/{}/{}/colonies/{}'.format(version, market, colony_id)
 
         colony_metadata = {
-            'BaseName': 'TestBase',
-            'FactionName': 'TestFaction',
-            'Planet': 'TestPlanet',
-            'OwnerType': 'Steam',
-            'OwnerID': user_id,
+            'BaseName'    : 'TestBase',
+            'FactionName' : 'TestFaction',
+            'Planet'      : 'TestPlanet',
+            'OwnerType'   : 'Steam',
+            'OwnerID'     : user_id,
             'LastGameTick': 1,
-            'HasSpawned': True
+            'HasSpawned'  : True
         }
 
         result = client.put(url, data=json.dumps(colony_metadata), mimetype='application/json')
         assert result.status_code == 200
 
         # Check the the user is in the moderation queue.
-        redis = get_redis_database_connection(db_number=15)
+        redis = g._database
         assert redis.sismember(consts.KEY_USER_STEAM_ID_MODERATE_SET, user_id)
-
 
     @pytest.mark.parametrize("version", versions)
     @pytest.mark.parametrize("market", markets)
@@ -122,13 +123,13 @@ class TestColoniesPut:
         url = '/{}/{}/colonies/{}'.format(version, market, colony_id)
 
         colony_metadata = {
-            'BaseName': 'TestBase',
-            'FactionName': 'TestFaction',
-            'Planet': 'TestPlanet',
-            'OwnerType': 'Steam',
-            'OwnerID': '1111111111111111111111111111111111111111',
+            'BaseName'    : 'TestBase',
+            'FactionName' : 'TestFaction',
+            'Planet'      : 'TestPlanet',
+            'OwnerType'   : 'Steam',
+            'OwnerID'     : '1111111111111111111111111111111111111111',
             'LastGameTick': 1,
-            'HasSpawned': False
+            'HasSpawned'  : False
         }
 
         result = client.put(url, data=json.dumps(colony_metadata), mimetype='application/json')

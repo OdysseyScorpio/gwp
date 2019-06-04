@@ -2,7 +2,7 @@ import json
 
 from flask import g
 from pytest import fixture
-
+import fakeredis
 import app
 from lib.db import get_redis_database_connection
 from lib.gwpcc import consts
@@ -14,9 +14,10 @@ def test_app_context():
     a = app.make_app()
     a.config['TESTING'] = True
     a.app_context().push()
-    g._database = get_redis_database_connection(db_number=15)
 
-    pipe = get_redis_database_connection(db_number=15).pipeline()
+    g._database = get_redis_database_connection(db_number=0, redis_client=fakeredis.FakeRedis)
+
+    pipe = g._database.pipeline()
 
     pipe.set(consts.KEY_CONFIGURATION_PRIME_COST, 300, nx=True)
     pipe.set(consts.KEY_API_VERSION, '1.0', nx=True)
@@ -31,7 +32,7 @@ def test_app_context():
 
     pipe.hset(consts.KEY_GLITTERBOT_DATA,
               consts.KEY_GLITTERBOT_IGNORE_THINGS, json.dumps(
-            ['8697f432058b914ba2b20c5bd6f0678548126e21', 'cdf9187a28bcb1b219a3a4aeaf3c99a65e7eb882'])
+                ['8697f432058b914ba2b20c5bd6f0678548126e21', 'cdf9187a28bcb1b219a3a4aeaf3c99a65e7eb882'])
               )
     pipe.hsetnx(consts.KEY_GLITTERBOT_DATA, consts.KEY_GLITTERBOT_SELL_PRICE_MULTIPLIER, "0.75")
     pipe.hsetnx(consts.KEY_GLITTERBOT_DATA, consts.KEY_GLITTERBOT_MIN_SELL_PRICE_MULTIPLIER, "0.2")

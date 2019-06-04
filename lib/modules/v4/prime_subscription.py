@@ -63,7 +63,7 @@ def subscription_update(colony_hash):
     colony = Colony.get_from_database_by_hash(colony_hash, db.get_redis_db_from_context())
 
     if not colony:
-        current_app.logger.error('{} colony not found in database'.format(colony.Hash))
+        current_app.logger.warning('{} colony not found in database'.format(colony.Hash))
         return Response(consts.ERROR_NOT_FOUND, status=consts.HTTP_NOT_FOUND)
 
     sub_data = request.json
@@ -78,7 +78,7 @@ def subscription_update(colony_hash):
 
     # Has it expired or ever existed?
     if token_in_db is None:
-        current_app.logger.error('{} Subscription token was not in database or has expired.'.format(colony.Hash))
+        current_app.logger.warning('{} Subscription token was not in database or has expired.'.format(colony.Hash))
         return Response(consts.ERROR_INVALID, status=consts.HTTP_INVALID)
 
     # They should match

@@ -19,6 +19,7 @@ werkzeug = "*"
 pytest = "*"
 pytest-cov = "*"
 sentry-sdk = {extras = ["flask"],version = "*"}
+fakeredis = "*"
 
 [requires]
 python_version = "3.7"

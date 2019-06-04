@@ -13,15 +13,15 @@ class TestColonyClass:
     @fixture()
     def fixture_colony_a() -> Colony:
         a: Colony = Colony.from_dict(
-            {
-                'BaseName': 'TestColonyA',
-                'FactionName': 'TestFactionA',
-                'Planet': 'TestPlanetA',
-                'DateCreated': 1,
-                'OwnerType': 'Normal',
-                'OwnerID': 1
-            },
-            connection=db.get_redis_db_from_context()
+                {
+                        'BaseName'   : 'TestColonyA',
+                        'FactionName': 'TestFactionA',
+                        'Planet'     : 'TestPlanetA',
+                        'DateCreated': 1,
+                        'OwnerType'  : 'Normal',
+                        'OwnerID'    : 1
+                },
+                connection=db.get_redis_db_from_context()
         )
         return a
 
@@ -29,15 +29,15 @@ class TestColonyClass:
     @fixture()
     def fixture_colony_b() -> Colony:
         b: Colony = Colony.from_dict(
-            {
-                'BaseName': 'TestColonyB',
-                'FactionName': 'TestFactionB',
-                'Planet': 'TestPlanetB',
-                'Hash': 'ABCD',
-                'OwnerType': 'Normal',
-                'OwnerID': 1
-            },
-            connection=db.get_redis_db_from_context()
+                {
+                        'BaseName'   : 'TestColonyB',
+                        'FactionName': 'TestFactionB',
+                        'Planet'     : 'TestPlanetB',
+                        'Hash'       : 'ABCD',
+                        'OwnerType'  : 'Normal',
+                        'OwnerID'    : 1
+                },
+                connection=db.get_redis_db_from_context()
         )
         return b
 
@@ -45,15 +45,15 @@ class TestColonyClass:
     @fixture()
     def fixture_colony_steam() -> Colony:
         s: Colony = Colony.from_dict(
-            {
-                'BaseName': 'TestColonyS',
-                'FactionName': 'TestFactionS',
-                'Planet': 'TestPlanetS',
-                'DateCreated': 100,
-                'OwnerType': 'Steam',
-                'OwnerID': '76561198275909496'
-            },
-            connection=db.get_redis_db_from_context()
+                {
+                        'BaseName'   : 'TestColonyS',
+                        'FactionName': 'TestFactionS',
+                        'Planet'     : 'TestPlanetS',
+                        'DateCreated': 100,
+                        'OwnerType'  : 'Steam',
+                        'OwnerID'    : '76561198275909496'
+                },
+                connection=db.get_redis_db_from_context()
         )
         return s
 
@@ -74,9 +74,9 @@ class TestColonyClass:
         # Remove key from Steam User keys
         if colony.OwnerType == 'Steam':
             connection.lrem(
-                consts.KEY_COLONY_INDEX_BY_STEAM_ID.format(colony.OwnerID),
-                0,
-                colony.Hash
+                    consts.KEY_COLONY_INDEX_BY_STEAM_ID.format(colony.OwnerID),
+                    0,
+                    colony.Hash
             )
 
         # Write the Colony to the database.
@@ -153,15 +153,15 @@ class TestColonyClass:
         self.setup_data_in_db(b, connection)
 
         c = Colony.from_dict(
-            {
-                'BaseName': 'TestColonyC',
-                'FactionName': 'TestFactionC',
-                'Planet': 'TestPlanetC',
-                'Hash': 'EFGH',
-                'OwnerType': 'Normal',
-                'OwnerID': 1
-            },
-            connection=db.get_redis_db_from_context()
+                {
+                        'BaseName'   : 'TestColonyC',
+                        'FactionName': 'TestFactionC',
+                        'Planet'     : 'TestPlanetC',
+                        'Hash'       : 'EFGH',
+                        'OwnerType'  : 'Normal',
+                        'OwnerID'    : 1
+                },
+                connection=db.get_redis_db_from_context()
         )
         colony_data = [a.to_dict(), b.to_dict(), c.to_dict()]
 
@@ -180,37 +180,37 @@ class TestColonyClass:
         :return:
         """
         a = Colony.from_dict(
-            {
-                'BaseName': 'TestColonyA',
-                'FactionName': 'TestFactionA',
-                'Planet': 'TestPlanetA',
-                'Hash': '1234',
-                'OwnerType': 'Normal',
-                'OwnerID': 1
-            },
-            connection=db.get_redis_db_from_context()
+                {
+                        'BaseName'   : 'TestColonyA',
+                        'FactionName': 'TestFactionA',
+                        'Planet'     : 'TestPlanetA',
+                        'Hash'       : '1234',
+                        'OwnerType'  : 'Normal',
+                        'OwnerID'    : 1
+                },
+                connection=db.get_redis_db_from_context()
         )
         b = Colony.from_dict(
-            {
-                'BaseName': 'TestColonyB',
-                'FactionName': 'TestFactionB',
-                'Planet': 'TestPlanetB',
-                'Hash': '5678',
-                'OwnerType': 'Normal',
-                'OwnerID': 1
-            },
-            connection=db.get_redis_db_from_context()
+                {
+                        'BaseName'   : 'TestColonyB',
+                        'FactionName': 'TestFactionB',
+                        'Planet'     : 'TestPlanetB',
+                        'Hash'       : '5678',
+                        'OwnerType'  : 'Normal',
+                        'OwnerID'    : 1
+                },
+                connection=db.get_redis_db_from_context()
         )
         c = Colony.from_dict(
-            {
-                'BaseName': 'TestColonyC',
-                'FactionName': 'TestFactionC',
-                'Planet': 'TestPlanetC',
-                'Hash': 'EFGH',
-                'OwnerType': 'Normal',
-                'OwnerID': 1
-            },
-            connection=db.get_redis_db_from_context()
+                {
+                        'BaseName'   : 'TestColonyC',
+                        'FactionName': 'TestFactionC',
+                        'Planet'     : 'TestPlanetC',
+                        'Hash'       : 'EFGH',
+                        'OwnerType'  : 'Normal',
+                        'OwnerID'    : 1
+                },
+                connection=db.get_redis_db_from_context()
         )
         colony_data = [a.to_dict(), b.to_dict(), c.to_dict()]
         result = Colony.get_many_from_database(colony_data, db.get_redis_db_from_context())
@@ -266,9 +266,9 @@ class TestColonyClass:
         index = connection.lrange(consts.KEY_COLONY_INDEX_BY_ID, -5, -1)
 
         steam_index = connection.lrange(
-            consts.KEY_COLONY_INDEX_BY_STEAM_ID.format(fixture_colony_steam.OwnerID),
-            -5,
-            -1
+                consts.KEY_COLONY_INDEX_BY_STEAM_ID.format(fixture_colony_steam.OwnerID),
+                -5,
+                -1
         )
 
         assert fixture_colony_steam.Hash in index
