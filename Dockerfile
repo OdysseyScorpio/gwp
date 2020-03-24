@@ -1,6 +1,6 @@
 FROM python:3.7
 
-LABEL maintainer="Adam Leyshon <aleyshon@thecodecache.net>"
+LABEL maintainer="Martyn Green <martyn.robert.green@gmail.com>"
 
 RUN pip install meinheld gunicorn pipenv
 
