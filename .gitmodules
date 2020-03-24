@@ -1,3 +1,0 @@
-[submodule "lib/gwpcc"]
-	path = lib/gwpcc
-	url = ssh://git@git-proxy.thecodecache.net:12222/glitterworld-prime-ssc/gwp-pycc.git
