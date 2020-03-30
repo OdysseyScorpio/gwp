@@ -19,6 +19,7 @@ def market_get_items(colony_hash):
 
     things = Thing.get_many_from_database(colony.SupportedThings, connection)
 
-    thing_data = [thing.to_dict() for thing in things.values()]
+    #thing_data = [thing.to_dict() for thing in things.values()]
+    thing_data = [thing.to_dict() for thing in things.values() if thing.Quantity > 0 ]
 
     return Response(json.dumps(thing_data), mimetype='application/json')
