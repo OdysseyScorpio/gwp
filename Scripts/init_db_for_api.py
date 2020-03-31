@@ -18,12 +18,12 @@ db = get_redis_database_connection(config.API_DB_CONFIG[version])
 pipe = db.pipeline()
 
 # Set version keys
-pipe.setnx(const.KEY_API_VERSION, 1.0)
+pipe.setnx(const.KEY_API_VERSION, 1.1)
 
 # Build maintenance keys
-pipe.setnx(const.KEY_API_MAINTENANCE_MODE, False)
-pipe.hsetnx(const.KEY_API_MAINTENANCE_WINDOW, const.HASH_KEY_API_MAINTENANCE_WINDOW_START, 0)
-pipe.hsetnx(const.KEY_API_MAINTENANCE_WINDOW, const.HASH_KEY_API_MAINTENANCE_WINDOW_STOP, 0)
+#pipe.setnx(const.KEY_API_MAINTENANCE_MODE, False)
+pipe.hsetnx(const.KEY_API_MAINTENANCE_WINDOW, const.HASH_KEY_API_MAINTENANCE_WINDOW_START, int(0))
+pipe.hsetnx(const.KEY_API_MAINTENANCE_WINDOW, const.HASH_KEY_API_MAINTENANCE_WINDOW_STOP, int(0))
 
 # Default 1 day delivery for orders.
 pipe.hsetnx(const.KEY_CONFIGURATION_ORDERS, const.HASH_KEY_ORDER_TICK_DELAY, 60000)
