@@ -1,5 +1,5 @@
 from flask import request, Response, current_app, g
-from sentry_sdk import configure_scope
+#from sentry_sdk import configure_scope
 
 from config import API_DB_CONFIG
 from lib.db import get_redis_db_from_context
@@ -44,20 +44,20 @@ def set_database_connection():
         return Response(consts.ERROR_NOT_FOUND, status=consts.HTTP_NOT_FOUND)
 
 
-def collect_sentry_tags():
-    with configure_scope() as scope:
-        if g.gwp_market:
-            scope.set_tag('market', g.gwp_market)
+# def collect_sentry_tags():
+#     with configure_scope() as scope:
+#         if g.gwp_market:
+#             scope.set_tag('market', g.gwp_market)
 
-        if request.view_args and 'colony_hash' in request.view_args:
-            scope.set_tag('colony_id', request.view_args['colony_hash'])
+#         if request.view_args and 'colony_hash' in request.view_args:
+#             scope.set_tag('colony_id', request.view_args['colony_hash'])
 
-        if request.data and request.json and isinstance(request.json, dict):
-            data = request.json
-            if 'OwnerType' in data:
-                scope.set_tag('Owner Type', data['OwnerType'])
-            if 'OwnerID' in data:
-                scope.set_tag('Owner ID', data['OwnerID'])
+#         if request.data and request.json and isinstance(request.json, dict):
+#             data = request.json
+#             if 'OwnerType' in data:
+#                 scope.set_tag('Owner Type', data['OwnerType'])
+#             if 'OwnerID' in data:
+#                 scope.set_tag('Owner ID', data['OwnerID'])
 
 
 def log_request_info():
