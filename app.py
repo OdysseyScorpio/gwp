@@ -4,7 +4,7 @@ from flask_compress import Compress
 from werkzeug.middleware.proxy_fix import ProxyFix
 
 import config
-from lib.api import set_database_connection #, collect_sentry_tags
+from lib.api import set_database_connection#, collect_sentry_tags
 from lib.modules.v4 import make_routes as make_routes_v4
 
 
