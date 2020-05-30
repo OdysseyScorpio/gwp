@@ -4,7 +4,7 @@ from flask_compress import Compress
 from werkzeug.middleware.proxy_fix import ProxyFix
 
 import config
-from lib.api import set_database_connection#, collect_sentry_tags
+from lib.api import set_database_connection #, collect_sentry_tags
 from lib.modules.v4 import make_routes as make_routes_v4
 
 
@@ -17,8 +17,8 @@ def before_send(event, hint):
 
 
 def make_app():
-    import sentry_sdk
-    from sentry_sdk.integrations.flask import FlaskIntegration
+    # import sentry_sdk
+    # from sentry_sdk.integrations.flask import FlaskIntegration
 
     # sentry_sdk.init(
     #     dsn="https://6d5e55bd65094408b11d053eb3ab7328@sentry.thecodecache.net/3",
@@ -40,7 +40,7 @@ def make_app():
     # Install a hooks to setup the database connection
     # according to the API version requested and log request/response.
     app.before_request(set_database_connection)
-   #app.before_request(collect_sentry_tags)
+    #app.before_request(collect_sentry_tags)
     # app.before_request(log_request_info)
     # app.after_request(log_response)
 
@@ -52,4 +52,9 @@ def make_app():
 
 if __name__ == "__main__":
     app = make_app()
+    try:
+        ENV_HTTP_LISTEN_PORT = os.environ.get("ENV_HTTP_LISTEN_PORT")
+    except:
+        ENV_HTTP_LISTEN_PORT = config.LISTEN_ON_PORT
+
     app.run(host=config.LISTEN_ON_IP, port=config.LISTEN_ON_PORT, debug=config.DEBUG_MODE, threaded=True)

@@ -9,6 +9,7 @@ import redis
 from flask import g
 
 import config
+import os
 
 decoder = JSONDecoder()
 
@@ -62,7 +63,15 @@ def get_redis_database_connection(db_number=0, redis_client=redis.Redis):
     :return:
     """
 
-    db = redis_client(config.DATABASE_IP, config.DATABASE_PORT, decode_responses=True, db=db_number)
+    try:
+        ENV_GWP_DB_NAME = os.environ.get("ENV_GWP_DB_NAME")
+        ENV_GWP_DB_PORT = os.environ.get("ENV_GWP_DB_PORT")
+    except:
+        ENV_GWP_DB_NAME = config.DATABASE_IP
+        ENV_GWP_DB_PORT = config.DATABASE_PORT
+
+    db = redis_client(ENV_GWP_DB_NAME, config.DATABASE_PORT,
+                      decode_responses=True, db=db_number)
 
     db.set_response_callback('GET', parse_boolean_responses_get)
     db.set_response_callback('HGET', parse_boolean_responses_get)
