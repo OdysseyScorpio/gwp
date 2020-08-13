@@ -4,7 +4,7 @@ from flask import Blueprint, Response
 
 from lib import db
 from lib.gwpcc.consts import KEY_API_MAINTENANCE_MODE, \
-    KEY_API_MAINTENANCE_WINDOW, KEY_API_VERSION
+    KEY_API_MAINTENANCE_WINDOW, KEY_API_VERSION, KEY_API_VERSION_SUPPORTED
 
 api_module = Blueprint('v4_api_module', __name__, url_prefix='/application')
 
@@ -37,7 +37,8 @@ def api_version_get():
     db_connection = db.get_redis_db_from_context()
 
     version = db_connection.get(KEY_API_VERSION)
+    versionSupported = db_connection.get(KEY_API_VERSION_SUPPORTED)
 
-    version_data = {'Version': version}
+    version_data = {'Version': version, 'Supported' : versionSupported}
 
     return Response(json.dumps(version_data), status=200, mimetype='application/json')

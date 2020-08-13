@@ -20,7 +20,8 @@ def test_app_context():
     pipe = g._database.pipeline()
 
     pipe.set(consts.KEY_CONFIGURATION_PRIME_COST, 300, nx=True)
-    pipe.set(consts.KEY_API_VERSION, '1.0', nx=True)
+    pipe.set(consts.KEY_API_VERSION, '1.2', nx=True)
+    pipe.set(consts.KEY_API_VERSION_SUPPORTED, '1.1', nx=True)
     pipe.hset(consts.KEY_CONFIGURATION_ORDERS, consts.HASH_KEY_ORDER_TICK_DELAY, '60000')
     pipe.hsetnx(consts.KEY_GLITTERBOT_DATA, consts.KEY_GLITTERBOT_MTIME_START, 23)
     pipe.hsetnx(consts.KEY_GLITTERBOT_DATA, consts.KEY_GLITTERBOT_MTIME_LENGTH, 3600)
