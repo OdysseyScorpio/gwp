@@ -2,6 +2,8 @@ FROM python:3.7
 
 LABEL maintainer="Martyn Green <martyn.robert.green@gmail.com>"
 
+RUN git submodule init && git submodule update
+
 RUN pip install meinheld gunicorn pipenv
 
 COPY ./docker/entrypoint.sh /entrypoint.sh
