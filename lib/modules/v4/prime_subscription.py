@@ -16,12 +16,14 @@ DaysPerQuadrum = 15
 
 @prime_module.route('/check/<string:colony_hash>', methods=['GET'])
 def subscription_check(colony_hash):
+    print("Checking subscription status for colony")
     db_connection = db.get_redis_db_from_context()
     response = dict()
 
     colony = Colony.get_from_database_by_hash(colony_hash, db.get_redis_db_from_context())
 
     if not colony:
+        print("Colony does not exist in db")
         current_app.logger.error('{} colony not found in database'.format(colony.Hash))
         return Response(consts.ERROR_NOT_FOUND, status=consts.HTTP_NOT_FOUND)
 
@@ -47,6 +49,7 @@ def subscription_check(colony_hash):
     response['Token'] = token
     current_app.logger.debug('{} new token is .'.format(colony.Hash, token))
 
+    print("Subscription status sent to colony")
     return Response(json.dumps(response), status=200, mimetype='application/json')
 
 

@@ -18,7 +18,8 @@ db = get_redis_database_connection(config.API_DB_CONFIG[version])
 pipe = db.pipeline()
 
 # Set version keys
-pipe.setnx(const.KEY_API_VERSION, 1.1)
+pipe.setnx(const.KEY_API_VERSION, 1.2)
+pipe.setnx(const.KEY_API_VERSION_SUPPORTED, 1.1)
 
 # Build maintenance keys
 #pipe.setnx(const.KEY_API_MAINTENANCE_MODE, False)

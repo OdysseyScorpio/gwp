@@ -109,7 +109,7 @@ class TestThingClass:
         a = Thing.from_dict(c)
         self.setup_data_in_db(a, connection)
         b = Thing.get_from_database(c, connection)
-        assert b.Hash == 'f1987009817fdc766c908591571982ace2f211d0'
+        assert b.Hash == 'f5000009817fdc766c908591571982ace2f211d0'
 
     def test_class_init(self):
         o = Thing('Test')

@@ -15,7 +15,7 @@ itsdangerous = "*"
 jinja2 = "*"
 markupsafe = "*"
 redis = "*"
-werkzeug = "*"
+werkzeug = ">=0.15.3"
 pytest = "*"
 pytest-cov = "*"
 sentry-sdk = {extras = ["flask"],version = "*"}
