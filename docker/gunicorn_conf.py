@@ -5,7 +5,7 @@ import os
 workers_per_core_str = os.getenv("WORKERS_PER_CORE", "2")
 web_concurrency_str = os.getenv("WEB_CONCURRENCY", None)
 host = os.getenv("HOST", "0.0.0.0")
-port = os.getenv("PORT", "1997")
+port = os.getenv("PORT", "1987")
 bind_env = os.getenv("BIND", None)
 use_loglevel = os.getenv("LOG_LEVEL", "info")
 if bind_env:
