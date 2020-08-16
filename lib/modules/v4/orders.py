@@ -194,12 +194,15 @@ def update_order(colony_hash, order_hash):
                 return Response(consts.ERROR_INVALID, status=consts.HTTP_INVALID)
         else:
             print("Order invalid")
+<<<<<<< HEAD
             return Response(consts.ERROR_INVALID, status=consts.HTTP_INVALID)
     elif (request.json('DeliveryTick')):
         try:
             update_DeliveryTick = int(request.json['DeliveryTick'])
             order.DeliveryTick = update_DeliveryTick
         except:
+=======
+>>>>>>> 5ac3457 (Added logging)
             return Response(consts.ERROR_INVALID, status=consts.HTTP_INVALID)
     else:
         print("Order invalid")
@@ -268,7 +271,6 @@ def get_order(colony_hash, order_hash):
     response = make_response(content)
     response.headers['Content-length'] = len(content)
     response.headers['Content-Encoding'] = 'gzip'
-
     print("Order sent to colony")
     return response
 
