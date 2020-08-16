@@ -21,6 +21,7 @@ order_module = Blueprint('v4_prime_orders', __name__, url_prefix='/v4/orders')
 
 @order_module.route('/<string:colony_hash>', methods=['GET'])
 def get_orders(colony_hash):
+    print("Sending orders for colony to colony")
     connection = db.get_redis_db_from_context()
     response = dict()
 
@@ -31,14 +32,17 @@ def get_orders(colony_hash):
     ####
 
     if colony is None:
+        print("Colony does not exist in db")
         return Response(consts.ERROR_NOT_FOUND, status=consts.ERROR_NOT_FOUND)
 
     if colony.IsBanned():
+        print("Colony is banned in db")
         return Response(consts.ERROR_BANNED, status=consts.HTTP_FORBIDDEN)
 
     current_tick = request.args.get('tick')
 
     if current_tick is None:
+        print("Colony tick is not present in request")
         return Response(consts.ERROR_INVALID, status=consts.HTTP_INVALID)
 
     current_tick = int(current_tick)
@@ -60,20 +64,23 @@ def get_orders(colony_hash):
     colony.ping()
 
     colony.save_to_database()
-
+    print("Orders sent")
     return Response(json.dumps(response), status=consts.HTTP_OK, mimetype=consts.MIME_JSON)
 
 
 @order_module.route('/<string:colony_hash>', methods=['PUT'])
 def place_order(colony_hash):
+    print("Received order request from colony")
     connection = db.get_redis_db_from_context()
 
     colony = Colony.get_from_database_by_hash(colony_hash, db.get_redis_db_from_context())
 
     if colony is None:
+        print("Colony does not exist in db")
         return Response(consts.ERROR_NOT_FOUND, status=consts.HTTP_NOT_FOUND)
 
     if colony.IsBanned():
+        print("Colony is banned in db")
         return Response(consts.ERROR_BANNED, status=consts.HTTP_FORBIDDEN)
 
     ####
@@ -81,6 +88,7 @@ def place_order(colony_hash):
     ####
 
     if not colony.HasActiveSubscription():
+        print("Colony does not have activ subscription")
         return Response(consts.ERROR_NOT_FOUND, status=consts.HTTP_NOT_FOUND)
 
     gz_post_data = request.files['order']
@@ -140,14 +148,19 @@ def place_order(colony_hash):
     try:
         message = OrderMessage.prepare(db.get_market_name(), things_bought_from_gwp, things_sold_to_gwp, colony)
         send(message, connection)
+        print("Message sent to queue")
     except Exception:
+        print("An error in sending to message to queue")
+        print(Exception)
         pass  # IDGAF
-
+    
+    print("Order created")
     return Response(json.dumps("OK"), status=consts.HTTP_OK, mimetype=consts.MIME_JSON)
 
 
 @order_module.route('/<string:colony_hash>/<string:order_hash>', methods=['POST'])
 def update_order(colony_hash, order_hash):
+    print("Received update order request")
     connection = db.get_redis_db_from_context()
 
     ####
@@ -159,14 +172,17 @@ def update_order(colony_hash, order_hash):
     colony = Colony.get_from_database_by_hash(colony_hash, connection)
 
     if not colony:
+        print("Colony does not exist in db")
         return Response(consts.ERROR_NOT_FOUND, status=consts.HTTP_NOT_FOUND)
 
     if colony.IsBanned():
+        print("Colony is banned in db")
         return Response(consts.ERROR_BANNED, status=consts.HTTP_FORBIDDEN)
 
     order = Order.get_from_database_by_hash(order_hash, connection)
 
     if not order:
+        print("Order not found in db")
         return Response(consts.ERROR_NOT_FOUND, status=consts.HTTP_NOT_FOUND)
 
     new_status = request.json['Status']
@@ -176,8 +192,10 @@ def update_order(colony_hash, order_hash):
         if check_order_state_is_valid(order, new_status):
             order.Status = new_status
         else:
+            print("Order invalid")
             return Response(consts.ERROR_INVALID, status=consts.HTTP_INVALID)
     else:
+        print("Order invalid")
         return Response(consts.ERROR_INVALID, status=consts.HTTP_INVALID)
 
     if order.Status == consts.ORDER_STATUS_FAIL:
@@ -210,12 +228,13 @@ def update_order(colony_hash, order_hash):
     colony.ping()
 
     pipe.execute()
-
+    print("Order updated")
     return Response(json.dumps("OK"), status=consts.HTTP_OK, mimetype=consts.MIME_JSON)
 
 
 @order_module.route('/<string:colony_hash>/<string:order_hash>', methods=['GET'])
 def get_order(colony_hash, order_hash):
+    print("Getting order for colony")
     connection = db.get_redis_db_from_context()
     colony = Colony.get_from_database_by_hash(colony_hash, connection)
 
@@ -224,10 +243,12 @@ def get_order(colony_hash, order_hash):
     ####
 
     if not colony:
+        print("Colony does not exist in db")
         return Response(consts.ERROR_NOT_FOUND, status=consts.HTTP_INVALID)
 
     order = Order.get_from_database_by_hash(order_hash, connection)
     if not order:
+        print("Order does not exist in db")
         return Response(consts.ERROR_NOT_FOUND, status=consts.HTTP_NOT_FOUND)
 
     # Deserialize the Things Sold/Bought so they can be correctly re-serialized as dicts not JSON strings.
@@ -235,7 +256,7 @@ def get_order(colony_hash, order_hash):
     order.ThingsBoughtFromGwp = order.ThingsBoughtFromGwp if type(order.ThingsBoughtFromGwp) == list else '[]'
 
     colony.ping()
-
+    print("Order sent to colony")
     return Response(json.dumps(order.to_dict()), status=consts.HTTP_OK, mimetype=consts.MIME_JSON)
 
 

@@ -27,12 +27,14 @@ def user_generate_id():
 
 @user_module.route('/reactivate', methods=['POST'])
 def reactivate():
+    print("Request to reactivate colony received")
     try:
         incoming_data = request.json
         token = escape(incoming_data['Token'])
         user_id = escape(incoming_data['UserId'])
         user_type = escape(incoming_data['UserType'])
     except KeyError:
+        print("Error in request found")
         return Response(consts.ERROR_INVALID, status=consts.HTTP_INVALID)
 
     current_app.logger.info('{}:{} is trying to use activation token {}'.format(user_type, user_id, token))
@@ -63,5 +65,5 @@ def reactivate():
             db_connection.srem(ban_key, user_id)
             db_connection.delete(consts.KEY_USER_ACTIVATION_REQUEST_TOKEN.format(user_id))
             current_app.logger.info('{}:{} removed from ban list'.format(user_type, user_id))
-
+    print("Colony reactivate request completed")
     return Response(json.dumps({'Accepted': accept}), status=200, mimetype=consts.MIME_JSON)

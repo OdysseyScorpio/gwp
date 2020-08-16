@@ -1,4 +1,5 @@
 import json
+import logging
 
 from flask import Blueprint, Response
 
@@ -14,7 +15,7 @@ def server_status():
     db_connection = db.get_redis_db_from_context()
 
     mode = db_connection.get(KEY_API_MAINTENANCE_MODE)
-
+    print("Maintenance Mode is {}".format(mode))
     # True if in Maintenance mode.
     if mode:
         return Response(json.dumps("Gone"), status=410, mimetype='application/json')
@@ -28,7 +29,7 @@ def server_maintenance_window():
 
     # Returns tuple, {Start: epoch, Stop: epoch}
     window = db_connection.hgetall(KEY_API_MAINTENANCE_WINDOW)
-
+    print("Maintenance Window is {}".format(json.dumps(window)))
     return Response(json.dumps(window), status=200, mimetype='application/json')
 
 
@@ -39,6 +40,8 @@ def api_version_get():
     version = db_connection.get(KEY_API_VERSION)
     versionSupported = db_connection.get(KEY_API_VERSION_SUPPORTED)
 
-    version_data = {'Version': version, 'Supported' : versionSupported}
+    print("Main Version is {} Supported Version is {}".format(
+        version, versionSupported))
+    version_data = {'Version': version, 'Supported': versionSupported}
 
     return Response(json.dumps(version_data), status=200, mimetype='application/json')
