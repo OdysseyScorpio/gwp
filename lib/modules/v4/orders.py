@@ -185,17 +185,24 @@ def update_order(colony_hash, order_hash):
         print("Order not found in db")
         return Response(consts.ERROR_NOT_FOUND, status=consts.HTTP_NOT_FOUND)
 
-    new_status = request.json['Status']
+    if (request.json('Status')):
+        new_status = request.json['Status']
 
-    # Check that the state is not going backwards or is invalid.
-    if new_status in consts.ORDER_VALID_STATES:
-        if check_order_state_is_valid(order, new_status):
-            order.Status = new_status
+        # Check that the state is not going backwards or is invalid.
+        if new_status in consts.ORDER_VALID_STATES:
+            if check_order_state_is_valid(order, new_status):
+                order.Status = new_status
+            else:
+                return Response(consts.ERROR_INVALID, status=consts.HTTP_INVALID)
         else:
-            print("Order invalid")
+            return Response(consts.ERROR_INVALID, status=consts.HTTP_INVALID)
+    elif (request.json('DeliveryTick')):
+        try:
+            update_DeliveryTick = int(request.json['DeliveryTick'])
+            order.DeliveryTick = update_DeliveryTick
+        except:
             return Response(consts.ERROR_INVALID, status=consts.HTTP_INVALID)
     else:
-        print("Order invalid")
         return Response(consts.ERROR_INVALID, status=consts.HTTP_INVALID)
 
     if order.Status == consts.ORDER_STATUS_FAIL:
