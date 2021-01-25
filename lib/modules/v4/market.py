@@ -26,7 +26,8 @@ def market_get_items(colony_hash):
     print("Market items sent")
 
     content = gzip.compress(json.dumps(thing_data).encode('utf8'), 5)
-    response = make_response(content)
+    response = make_response(content, 200)
     response.headers['Content-length'] = len(content)
     response.headers['Content-Encoding'] = 'gzip'
+    response.headers['Content-Type'] = "application/json"
     return response
