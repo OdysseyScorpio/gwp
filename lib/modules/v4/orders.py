@@ -1,10 +1,5 @@
 import gzip
-<<<<<<< HEAD
 from flask import Blueprint, Response, request, current_app,  make_response, json
-=======
-import make_response, json
-from flask import Blueprint, Response, request, current_app
->>>>>>> e4e8c86 (added GZIP compression to order and market response)
 
 import lib.gwpcc.orders.stats as order_stats
 import lib.gwpcc.orders.utils as order_utils
