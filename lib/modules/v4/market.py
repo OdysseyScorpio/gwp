@@ -1,7 +1,7 @@
 import gzip
-import make_response, json
 
-from flask import Blueprint, Response
+from flask import Blueprint, Response,  make_response, json
+import gzip
 
 from lib import db
 from lib.gwpcc import consts

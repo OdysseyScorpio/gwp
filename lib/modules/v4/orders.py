@@ -1,6 +1,5 @@
 import gzip
-import make_response, json
-from flask import Blueprint, Response, request, current_app
+from flask import Blueprint, Response, request, current_app,  make_response, json
 
 import lib.gwpcc.orders.stats as order_stats
 import lib.gwpcc.orders.utils as order_utils
