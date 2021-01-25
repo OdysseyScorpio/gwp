@@ -202,7 +202,6 @@ def update_order(colony_hash, order_hash):
         except:
             return Response(consts.ERROR_INVALID, status=consts.HTTP_INVALID)
     else:
-        print("Order invalid")
         return Response(consts.ERROR_INVALID, status=consts.HTTP_INVALID)
 
     if order.Status == consts.ORDER_STATUS_FAIL:
@@ -265,10 +264,10 @@ def get_order(colony_hash, order_hash):
     colony.ping()
 
     content = gzip.compress(json.dumps(order.to_dict().encode('utf8'), 5))
-    response = make_response(content)
+    response = make_response(content, 200)
     response.headers['Content-length'] = len(content)
     response.headers['Content-Encoding'] = 'gzip'
-
+    response.headers['Content-Type'] = "application/json"
     print("Order sent to colony")
     return response
 
