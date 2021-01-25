@@ -24,6 +24,7 @@ def market_get_items(colony_hash):
     #thing_data = [thing.to_dict() for thing in things.values()]
     thing_data = [thing.to_dict() for thing in things.values() if thing.Quantity > 0 ]
     print("Market items sent")
+
     content = gzip.compress(json.dumps(thing_data).encode('utf8'), 5)
     response = make_response(content)
     response.headers['Content-length'] = len(content)

@@ -193,6 +193,7 @@ def update_order(colony_hash, order_hash):
             else:
                 return Response(consts.ERROR_INVALID, status=consts.HTTP_INVALID)
         else:
+            print("Order invalid")
             return Response(consts.ERROR_INVALID, status=consts.HTTP_INVALID)
     elif (request.json('DeliveryTick')):
         try:
@@ -201,6 +202,7 @@ def update_order(colony_hash, order_hash):
         except:
             return Response(consts.ERROR_INVALID, status=consts.HTTP_INVALID)
     else:
+        print("Order invalid")
         return Response(consts.ERROR_INVALID, status=consts.HTTP_INVALID)
 
     if order.Status == consts.ORDER_STATUS_FAIL:
@@ -261,6 +263,7 @@ def get_order(colony_hash, order_hash):
     order.ThingsBoughtFromGwp = order.ThingsBoughtFromGwp if type(order.ThingsBoughtFromGwp) == list else '[]'
 
     colony.ping()
+
     content = gzip.compress(json.dumps(order.to_dict().encode('utf8'), 5))
     response = make_response(content)
     response.headers['Content-length'] = len(content)
@@ -268,7 +271,6 @@ def get_order(colony_hash, order_hash):
 
     print("Order sent to colony")
     return response
-
 
 def check_order_state_is_valid(order, new_status):
     if order.Status == 'new':
