@@ -1,6 +1,5 @@
 import gzip
-import json
-
+import make_response, json
 from flask import Blueprint, Response, request, current_app
 
 import lib.gwpcc.orders.stats as order_stats
@@ -263,8 +262,13 @@ def get_order(colony_hash, order_hash):
     order.ThingsBoughtFromGwp = order.ThingsBoughtFromGwp if type(order.ThingsBoughtFromGwp) == list else '[]'
 
     colony.ping()
+    content = gzip.compress(json.dumps(order.to_dict().encode('utf8'), 5))
+    response = make_response(content)
+    response.headers['Content-length'] = len(content)
+    response.headers['Content-Encoding'] = 'gzip'
+
     print("Order sent to colony")
-    return Response(json.dumps(order.to_dict()), status=consts.HTTP_OK, mimetype=consts.MIME_JSON)
+    return response
 
 
 def check_order_state_is_valid(order, new_status):
