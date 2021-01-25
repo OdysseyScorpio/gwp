@@ -57,4 +57,4 @@ if __name__ == "__main__":
     except:
         ENV_HTTP_LISTEN_PORT = config.LISTEN_ON_PORT
 
-    app.run(host=config.LISTEN_ON_IP, port=ENV_HTTP_LISTEN_PORT, debug=config.DEBUG_MODE, threaded=True)
+    app.run(host=config.LISTEN_ON_IP, port=config.LISTEN_ON_PORT, debug=config.DEBUG_MODE, threaded=True)

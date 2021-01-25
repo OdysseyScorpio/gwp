@@ -2,7 +2,7 @@ FROM python:3.7
 
 LABEL maintainer="Martyn Green <martyn.robert.green@gmail.com>"
 
-RUN pip install gunicorn pipenv meinheld 
+RUN pip install meinheld gunicorn pipenv
 
 COPY ./docker/entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
