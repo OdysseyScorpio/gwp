@@ -267,6 +267,7 @@ def get_order(colony_hash, order_hash):
     response = make_response(content, 200)
     response.headers['Content-length'] = len(content)
     response.headers['Content-Encoding'] = 'gzip'
+    response.headers['Content-Type'] = "application/json"
     print("Order sent to colony")
     return response
 
