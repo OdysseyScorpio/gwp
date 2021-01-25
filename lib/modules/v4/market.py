@@ -1,6 +1,7 @@
-import json
+import gzip
 
-from flask import Blueprint, Response
+from flask import Blueprint, Response,  make_response, json
+import gzip
 
 from lib import db
 from lib.gwpcc import consts
@@ -23,4 +24,9 @@ def market_get_items(colony_hash):
     #thing_data = [thing.to_dict() for thing in things.values()]
     thing_data = [thing.to_dict() for thing in things.values() if thing.Quantity > 0 ]
     print("Market items sent")
-    return Response(json.dumps(thing_data), mimetype='application/json')
+
+    content = gzip.compress(json.dumps(thing_data).encode('utf8'), 5)
+    response = make_response(content)
+    response.headers['Content-length'] = len(content)
+    response.headers['Content-Encoding'] = 'gzip'
+    return response
