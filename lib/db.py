@@ -70,7 +70,7 @@ def get_redis_database_connection(db_number=0, redis_client=redis.Redis):
         ENV_GWP_DB_NAME = config.DATABASE_IP
         ENV_GWP_DB_PORT = config.DATABASE_PORT
 
-    db = redis_client(ENV_GWP_DB_NAME, config.DATABASE_PORT,
+    db = redis_client(ENV_GWP_DB_NAME, ENV_GWP_DB_PORT,
                       decode_responses=True, db=db_number)
 
     db.set_response_callback('GET', parse_boolean_responses_get)
