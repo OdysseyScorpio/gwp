@@ -4,8 +4,12 @@ import os
 
 workers_per_core_str = os.getenv("WORKERS_PER_CORE", "2")
 web_concurrency_str = os.getenv("WEB_CONCURRENCY", None)
+try:
+    ENV_HTTP_LISTEN_PORT = os.environ.get("ENV_HTTP_LISTEN_PORT")
+except:
+    ENV_HTTP_LISTEN_PORT = config.LISTEN_ON_PORT
 host = os.getenv("HOST", "0.0.0.0")
-port = os.getenv("PORT", "1997")
+port = os.getenv("PORT", ENV_HTTP_LISTEN_PORT)
 bind_env = os.getenv("BIND", None)
 use_loglevel = os.getenv("LOG_LEVEL", "info")
 if bind_env:
