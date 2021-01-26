@@ -284,7 +284,8 @@ def get_order(colony_hash, order_hash):
 
     colony.ping()
 
-    content = gzip.compress(json.dumps(order.to_dict().encode('utf8'), 5))
+    content = gzip.compress(json.dumps(order.to_dict()).encode('utf8'), 5)
+
     response = make_response(content, 200)
     response.headers['Content-length'] = len(content)
     response.headers['Content-Encoding'] = 'gzip'
